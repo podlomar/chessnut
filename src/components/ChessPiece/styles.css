@@ -1,0 +1,55 @@
+.piece {
+  width: 3rem;
+  height: 3rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.wp {
+  background-image: url('/pieces/wp.svg');
+}
+
+.wb {
+  background-image: url('/pieces/wb.svg');
+}
+
+.wn {
+  background-image: url('/pieces/wn.svg');
+}
+
+.wr {
+  background-image: url('/pieces/wr.svg');
+}
+
+.wq {
+  background-image: url('/pieces/wq.svg');
+}
+
+.wk {
+  background-image: url('/pieces/wk.svg');
+}
+
+.bp {
+  background-image: url('/pieces/bp.svg');
+}
+
+.bb {
+  background-image: url('/pieces/bb.svg');
+}
+
+.bn {
+  background-image: url('/pieces/bn.svg');
+}
+
+.br {
+  background-image: url('/pieces/br.svg');
+}
+
+.bq {
+  background-image: url('/pieces/bq.svg');
+}
+
+.bk {
+  background-image: url('/pieces/bk.svg');
+}

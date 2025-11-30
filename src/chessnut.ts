@@ -69,13 +69,17 @@ const getPlacement = (fen: string): string => {
   return fen.split(' ')[0];
 };
 
+export interface GameState {
+  chess: Chess;
+}
+
 export class ChessnutDriver {
-  private currentState: Chess | null = null;
+  private currentState: GameState | null = null;
   private validMoves: Move[] = [];
-  private onNewState: ((chess: Chess) => void);
+  private onNewState: ((state: GameState) => void);
   private lastData: Uint8Array | null = null;
 
-  public constructor(onNewState: (chess: Chess) => void) {
+  public constructor(onNewState: (state: GameState) => void) {
     this.onNewState = onNewState;
   }
 
@@ -119,9 +123,9 @@ export class ChessnutDriver {
       this.lastData = newData;
       const newState = readPosition(newData);
       if (this.currentState === null) {
-        this.currentState = newState;
-        this.validMoves = this.currentState.moves({ verbose: true });
-        this.onNewState(newState);
+        this.currentState = { chess: newState };
+        this.validMoves = this.currentState.chess.moves({ verbose: true });
+        this.onNewState(this.currentState);
         return;
       }
 
@@ -130,8 +134,10 @@ export class ChessnutDriver {
         const afterPlacement = getPlacement(move.after);
         if (afterPlacement === placement) {
           console.log("Detected move:", move);
-          this.currentState = new Chess(move.after);
-          this.validMoves = this.currentState.moves({ verbose: true });
+          this.currentState.chess.move(move);
+          this.validMoves = this.currentState.chess.moves({ verbose: true });
+          this.currentState = { chess: this.currentState.chess };
+
           this.onNewState(this.currentState);
           break;
         }

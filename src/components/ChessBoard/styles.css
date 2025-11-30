@@ -1,7 +1,7 @@
 .chess-board {
   background-color: #2a2a4a;
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 

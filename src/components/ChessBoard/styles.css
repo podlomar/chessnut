@@ -1,0 +1,26 @@
+.chess-board {}
+
+.row {
+  display: flex;
+}
+
+.cell {
+  width: 3rem;
+  height: 3rem;
+}
+
+.row:nth-child(odd)>.cell:nth-child(odd) {
+  background-color: #ddd;
+}
+
+.row:nth-child(odd)>.cell:nth-child(even) {
+  background-color: #999;
+}
+
+.row:nth-child(even)>.cell:nth-child(odd) {
+  background-color: #999;
+}
+
+.row:nth-child(even)>.cell:nth-child(even) {
+  background-color: #ddd;
+}

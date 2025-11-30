@@ -1,10 +1,9 @@
-const App = () => {
+import { ChessBoard } from './components/ChessBoard';
+
+export const App = () => {
   return (
-    <div className="app">
-      <h1>Welcome to Chessnut</h1>
-      <p>React 19 + TypeScript + Webpack</p>
+    <div className="container">
+      <ChessBoard />
     </div>
   );
 };
-
-export default App;

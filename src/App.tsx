@@ -20,9 +20,17 @@ export const App = () => {
 
   return (
     <div className="container">
-      <button onClick={handleConnect}>Connect</button>
-      {gameState !== null && <ChessBoard layout={gameState.chess.board()} />}
-      <MovesHistory history={gameState ? gameState.chess.history({ verbose: true }) : []} />
+      <header className="app-header">
+        <h1 className="app-title">Chessnut</h1>
+        <button className="connect-btn" onClick={handleConnect}>
+          Connect Board
+        </button>
+      </header>
+
+      <div className="game-container">
+        {gameState !== null && <ChessBoard layout={gameState.chess.board()} />}
+        <MovesHistory history={gameState ? gameState.chess.history({ verbose: true }) : []} />
+      </div>
     </div>
   );
 };

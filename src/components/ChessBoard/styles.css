@@ -1,26 +1,65 @@
-.chess-board {}
+.chess-board {
+  background-color: #2a2a4a;
+  padding: 0.75rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
 
 .row {
   display: flex;
 }
 
 .cell {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+}
+
+.row:first-child .cell:first-child {
+  border-top-left-radius: 4px;
+}
+
+.row:first-child .cell:last-child {
+  border-top-right-radius: 4px;
+}
+
+.row:last-child .cell:first-child {
+  border-bottom-left-radius: 4px;
+}
+
+.row:last-child .cell:last-child {
+  border-bottom-right-radius: 4px;
 }
 
 .row:nth-child(odd)>.cell:nth-child(odd) {
-  background-color: #ddd;
+  background-color: #f0d9b5;
 }
 
 .row:nth-child(odd)>.cell:nth-child(even) {
-  background-color: #999;
+  background-color: #b58863;
 }
 
 .row:nth-child(even)>.cell:nth-child(odd) {
-  background-color: #999;
+  background-color: #b58863;
 }
 
 .row:nth-child(even)>.cell:nth-child(even) {
-  background-color: #ddd;
+  background-color: #f0d9b5;
+}
+
+@media (min-width: 600px) {
+  .cell {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .cell {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
 }

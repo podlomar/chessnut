@@ -35,6 +35,13 @@ body {
   margin-bottom: 1rem;
 }
 
+.header-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .connect-btn {
   background-color: #e94560;
   color: white;
@@ -51,6 +58,29 @@ body {
 .connect-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.copy-pgn-btn {
+  background-color: transparent;
+  color: #eaeaea;
+  border: 2px solid #4a4a6a;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.copy-pgn-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #e94560;
+  color: #e94560;
+}
+
+.copy-pgn-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .connect-btn:active {

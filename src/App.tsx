@@ -9,6 +9,7 @@ import { MovesHistory } from './components/MovesHistory';
 
 export const App = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleConnect = () => {
     const driver = new ChessnutDriver((state => {
@@ -18,13 +19,35 @@ export const App = () => {
     driver.connect();
   };
 
+  const handleCopyPgn = async () => {
+    if (!gameState) return;
+
+    const pgn = gameState.chess.pgn();
+    try {
+      await navigator.clipboard.writeText(pgn);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy PGN:', err);
+    }
+  };
+
   return (
     <div className="container">
       <header className="app-header">
         <h1 className="app-title">Chessnut</h1>
-        <button className="connect-btn" onClick={handleConnect}>
-          Connect Board
-        </button>
+        <div className="header-buttons">
+          <button className="connect-btn" onClick={handleConnect}>
+            Connect Board
+          </button>
+          <button
+            className="copy-pgn-btn"
+            onClick={handleCopyPgn}
+            disabled={!gameState}
+          >
+            {copied ? '✓ Copied!' : 'Copy PGN'}
+          </button>
+        </div>
       </header>
 
       <div className="game-container">

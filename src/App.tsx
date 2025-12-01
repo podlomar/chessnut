@@ -3,8 +3,12 @@ import { ChessBoard } from './components/ChessBoard';
 import { ChessnutDriver, GameState, readPlacement } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
 
-// const chess = new Chess();
-// console.log("Moves", chess.moves({ verbose: true }));
+const cleanPgn = (pgn: string): string => {
+  return pgn
+    .replace(/\[.*\]\n/g, '') // Remove header tags
+    .replace(/\s+/g, ' ')     // Replace multiple spaces/newlines with single space
+    .trim();                  // Trim leading/trailing whitespace
+};
 
 export const App = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -29,7 +33,7 @@ export const App = () => {
       return;
     }
 
-    const pgn = gameState.chess.pgn();
+    const pgn = cleanPgn(gameState.chess.pgn());
     try {
       await navigator.clipboard.writeText(pgn);
       setCopied(true);

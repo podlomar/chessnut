@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ChessBoard } from './components/ChessBoard';
-import { ChessnutDriver, GameState, readPosition } from './chessnut';
-import { Chess } from 'chess.js';
+import { ChessnutDriver, GameState, readPlacement } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
 
 // const chess = new Chess();
@@ -14,13 +13,15 @@ export const App = () => {
   const handleConnect = () => {
     const driver = new ChessnutDriver((state => {
       setGameState(state);
-      console.log("history", state.chess.history({ verbose: true }));
+      console.log("New game state:", state.status);
     }));
     driver.connect();
   };
 
   const handleCopyPgn = async () => {
-    if (!gameState) return;
+    if (gameState === null || gameState.status !== 'playing') {
+      return;
+    }
 
     const pgn = gameState.chess.pgn();
     try {
@@ -51,8 +52,14 @@ export const App = () => {
       </header>
 
       <div className="game-container">
-        {gameState !== null && <ChessBoard layout={gameState.chess.board()} />}
-        <MovesHistory history={gameState ? gameState.chess.history({ verbose: true }) : []} />
+        {gameState !== null && <ChessBoard placement={gameState.placement} />}
+        <MovesHistory
+          history={
+            gameState?.status === 'playing'
+              ? gameState.chess.history({ verbose: true })
+              : []
+          }
+        />
       </div>
     </div>
   );

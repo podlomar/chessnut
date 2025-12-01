@@ -32,7 +32,7 @@ const byteToSquare = (index: number, part: 'low' | 'high'): Square => {
   return `${boardFiles[fileIndex]}${rank}` as Square;
 }
 
-export const readPosition = (data: Uint8Array): Chess => {
+export const readPlacement = (data: Uint8Array): string => {
   const chess = new Chess();
   chess.clear();
 
@@ -52,8 +52,7 @@ export const readPosition = (data: Uint8Array): Chess => {
     }
   }
 
-  chess.setTurn('w');
-  return chess;
+  return getPlacement(chess.fen());
 }
 
 const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
@@ -69,9 +68,25 @@ const getPlacement = (fen: string): string => {
   return fen.split(' ')[0];
 };
 
-export interface GameState {
-  chess: Chess;
+interface InitialState {
+  placement: string;
+  status: 'initial';
 }
+
+interface PlayingState {
+  placement: string;
+  chess: Chess;
+  status: 'playing';
+}
+
+interface RandomState {
+  placement: string;
+  status: 'random';
+}
+
+export type GameState = InitialState | PlayingState | RandomState;
+
+const initialPlacement = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
 
 export class ChessnutDriver {
   private currentState: GameState | null = null;
@@ -91,6 +106,10 @@ export class ChessnutDriver {
       }]
     });
 
+    if (devices.length === 0) {
+      return;
+    }
+
     const device = devices[0];
     await device.open();
     const collection = device.collections.find(
@@ -104,10 +123,8 @@ export class ChessnutDriver {
 
     const reportId = 0x21;
     await device.sendReport(reportId, new Uint8Array([0x01, 0x00]));
-
     device.addEventListener("inputreport", event => {
       const { data, reportId } = event;
-
       if (reportId !== 0x01) {
         return;
       }
@@ -121,27 +138,44 @@ export class ChessnutDriver {
       }
 
       this.lastData = newData;
-      const newState = readPosition(newData);
-      if (this.currentState === null) {
-        this.currentState = { chess: newState };
-        this.validMoves = this.currentState.chess.moves({ verbose: true });
+      const placement = readPlacement(newData);
+      if (this.currentState === null || this.currentState.status !== 'playing') {
+        if (placement === initialPlacement) {
+          this.currentState = {
+            placement,
+            status: 'initial'
+          };
+
+          this.validMoves = [];
+          this.onNewState(this.currentState);
+          return;
+        }
+
+        this.currentState = {
+          placement,
+          status: 'random'
+        };
+        this.validMoves = [];
         this.onNewState(this.currentState);
         return;
       }
 
-      const placement = getPlacement(newState.fen());
-      for (const move of this.validMoves) {
-        const afterPlacement = getPlacement(move.after);
-        if (afterPlacement === placement) {
-          console.log("Detected move:", move);
-          this.currentState.chess.move(move);
-          this.validMoves = this.currentState.chess.moves({ verbose: true });
-          this.currentState = { chess: this.currentState.chess };
-
-          this.onNewState(this.currentState);
-          break;
-        }
+      if (this.currentState.status !== 'playing') {
+        return;
       }
+
+      // for (const move of this.validMoves) {
+      //   const afterPlacement = getPlacement(move.after);
+      //   if (afterPlacement === placement) {
+      //     console.log("Detected move:", move);
+      //     this.currentState.chess.move(move);
+      //     this.validMoves = this.currentState.chess.moves({ verbose: true });
+      //     this.currentState = { chess: this.currentState.chess };
+
+      //     this.onNewState(this.currentState);
+      //     break;
+      //   }
+      // }
     });
   }
 }

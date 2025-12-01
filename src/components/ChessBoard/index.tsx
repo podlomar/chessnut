@@ -1,23 +1,58 @@
-import { Chess } from 'chess.js';
+import { Color, PieceSymbol } from 'chess.js';
 import { ChessPiece } from '../ChessPiece';
 import './styles.css';
 
-export type BoardLayout = ReturnType<Chess['board']>;
-
-interface Props {
-  layout: BoardLayout;
+interface Piece {
+  symbol: PieceSymbol;
+  color: Color;
 }
 
-export const ChessBoard = ({ layout }: Props) => {
+type BoardPlan = (Piece | null)[][];
+
+const buildBoardPlan = (placement: string): BoardPlan => {
+  const rows = placement.split('/');
+  const boardPlan: BoardPlan = [];
+
+  for (let r = 0; r < 8; r++) {
+    const row = rows[r];
+    const boardRow: (Piece | null)[] = [];
+    for (let i = 0; i < row.length; i++) {
+      const char = row[i];
+      if (isNaN(Number(char))) {
+        const isUpper = char === char.toUpperCase();
+        boardRow.push({
+          symbol: char.toLowerCase() as PieceSymbol,
+          color: isUpper ? 'w' : 'b',
+        });
+      } else {
+        const emptyCount = Number(char);
+        for (let j = 0; j < emptyCount; j++) {
+          boardRow.push(null);
+        }
+      }
+    }
+    boardPlan.push(boardRow);
+  }
+
+  return boardPlan;
+};
+
+interface Props {
+  placement: string;
+}
+
+export const ChessBoard = ({ placement }: Props) => {
+  const plan = buildBoardPlan(placement);
+
   return (
     <div className="chess-board">
-      {layout.map((row, rowIndex) => (
+      {plan.map((row, rowIndex) => (
         <div className="row" key={rowIndex}>
-          {row.map((cell, colIndex) => (
+          {row.map((piece, colIndex) => (
             <div className="cell" key={colIndex}>
-              {cell === null
+              {piece === null
                 ? null :
-                <ChessPiece symbol={cell.type} color={cell.color} />}
+                <ChessPiece symbol={piece.symbol} color={piece.color} />}
             </div>
           ))}
         </div>

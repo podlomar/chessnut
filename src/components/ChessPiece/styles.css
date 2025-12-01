@@ -7,8 +7,8 @@
   transition: transform 0.15s;
 }
 
-.piece:hover {
-  transform: scale(1.1);
+.dimmed .piece {
+  filter: brightness(0.3);
 }
 
 .wp {

@@ -39,13 +39,14 @@ const buildBoardPlan = (placement: string): BoardPlan => {
 
 interface Props {
   placement: string;
+  dimmed?: boolean;
 }
 
-export const ChessBoard = ({ placement }: Props) => {
+export const ChessBoard = ({ placement, dimmed = true }: Props) => {
   const plan = buildBoardPlan(placement);
 
   return (
-    <div className="chess-board">
+    <div className={`chess-board ${dimmed ? 'dimmed' : ''}`}>
       {plan.map((row, rowIndex) => (
         <div className="row" key={rowIndex}>
           {row.map((piece, colIndex) => (

@@ -50,6 +50,23 @@
   background-color: #f0d9b5;
 }
 
+
+.dimmed>.row:nth-child(odd)>.cell:nth-child(odd) {
+  background-color: #444;
+}
+
+.dimmed>.row:nth-child(odd)>.cell:nth-child(even) {
+  background-color: #333;
+}
+
+.dimmed>.row:nth-child(even)>.cell:nth-child(odd) {
+  background-color: #333;
+}
+
+.dimmed>.row:nth-child(even)>.cell:nth-child(even) {
+  background-color: #444;
+}
+
 @media (min-width: 600px) {
   .cell {
     width: 3rem;

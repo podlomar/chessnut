@@ -52,7 +52,12 @@ export const App = () => {
       </header>
 
       <div className="game-container">
-        {gameState !== null && <ChessBoard placement={gameState.placement} />}
+        {gameState !== null && (
+          <ChessBoard
+            placement={gameState.placement}
+            dimmed={gameState.status === 'random'}
+          />
+        )}
         <MovesHistory
           history={
             gameState?.status === 'playing'

@@ -17,11 +17,6 @@
   gap: 0.5rem;
 }
 
-.moves-history__title::before {
-  content: '♟';
-  font-size: 1.5rem;
-}
-
 .moves-history__list {
   list-style: none;
   max-height: 400px;
@@ -60,13 +55,7 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.moves-history__row:hover {
-  background: rgba(233, 69, 96, 0.15);
-}
-
 .moves-history__number {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.4);
   min-width: 2rem;
   font-weight: 500;
 }
@@ -79,19 +68,6 @@
   min-width: 4.5rem;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   font-size: 0.95rem;
-}
-
-.moves-history__move--white {
-  color: #f0d9b5;
-}
-
-.moves-history__move--black {
-  color: #b58863;
-}
-
-.moves-history__move-icon {
-  font-size: 1.1rem;
-  opacity: 0.8;
 }
 
 .moves-history__empty {

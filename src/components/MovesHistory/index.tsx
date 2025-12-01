@@ -5,17 +5,7 @@ interface Props {
   history: Move[];
 }
 
-const pieceSymbols: Record<string, string> = {
-  k: '♚',
-  q: '♛',
-  r: '♜',
-  b: '♝',
-  n: '♞',
-  p: '♟',
-};
-
 export const MovesHistory = ({ history }: Props) => {
-  // Group moves into pairs (white, black)
   const movePairs: { white: Move; black?: Move }[] = [];
 
   for (let i = 0; i < history.length; i += 2) {
@@ -35,17 +25,11 @@ export const MovesHistory = ({ history }: Props) => {
           {movePairs.map((pair, index) => (
             <li key={index} className="moves-history__row">
               <span className="moves-history__number">{index + 1}.</span>
-              <span className="moves-history__move moves-history__move--white">
-                <span className="moves-history__move-icon">
-                  {pieceSymbols[pair.white.piece]}
-                </span>
+              <span className="moves-history__move">
                 {pair.white.san}
               </span>
               {pair.black && (
-                <span className="moves-history__move moves-history__move--black">
-                  <span className="moves-history__move-icon">
-                    {pieceSymbols[pair.black.piece]}
-                  </span>
+                <span className="moves-history__move">
                   {pair.black.san}
                 </span>
               )}

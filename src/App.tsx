@@ -28,6 +28,10 @@ export const App = () => {
     driverRef.current?.startGame();
   };
 
+  const handleTakeBack = () => {
+    driverRef.current?.takeBack();
+  };
+
   const handleCopyPgn = async () => {
     if (gameState === null || gameState.status !== 'playing') {
       return;
@@ -57,6 +61,13 @@ export const App = () => {
             disabled={gameState?.status !== 'initial'}
           >
             Start Game
+          </button>
+          <button
+            className="takeback-btn"
+            onClick={handleTakeBack}
+            disabled={gameState?.status !== 'playing' || gameState.chess.history().length === 0}
+          >
+            Take Back
           </button>
           <button
             className="copy-pgn-btn"

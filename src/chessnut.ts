@@ -113,6 +113,25 @@ export class ChessnutDriver {
     this.onNewState(this.currentState);
   }
 
+  public takeBack(): void {
+    if (this.currentState?.status !== 'playing') {
+      return;
+    }
+
+    const move = this.currentState.chess.undo();
+    if (move === null) {
+      return;
+    }
+
+    this.currentState = {
+      placement: getPlacement(this.currentState.chess.fen()),
+      chess: this.currentState.chess,
+      status: 'playing',
+    };
+    this.validMoves = this.currentState.chess.moves({ verbose: true });
+    this.onNewState(this.currentState);
+  }
+
   public async connect() {
     const devices = await navigator.hid.requestDevice({
       filters: [{

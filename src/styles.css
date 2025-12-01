@@ -83,6 +83,29 @@ body {
   cursor: not-allowed;
 }
 
+.takeback-btn {
+  background-color: transparent;
+  color: #eaeaea;
+  border: 2px solid #4a4a6a;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.takeback-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.takeback-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .copy-pgn-btn {
   background-color: transparent;
   color: #eaeaea;

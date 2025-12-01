@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChessBoard } from './components/ChessBoard';
 import { ChessnutDriver, GameState, readPlacement } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
@@ -9,13 +9,19 @@ import { MovesHistory } from './components/MovesHistory';
 export const App = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [copied, setCopied] = useState(false);
+  const driverRef = useRef<ChessnutDriver | null>(null);
 
   const handleConnect = () => {
     const driver = new ChessnutDriver((state => {
       setGameState(state);
       console.log("New game state:", state.status);
     }));
+    driverRef.current = driver;
     driver.connect();
+  };
+
+  const handleStartGame = () => {
+    driverRef.current?.startGame();
   };
 
   const handleCopyPgn = async () => {
@@ -40,6 +46,13 @@ export const App = () => {
         <div className="header-buttons">
           <button className="connect-btn" onClick={handleConnect}>
             Connect Board
+          </button>
+          <button
+            className="start-btn"
+            onClick={handleStartGame}
+            disabled={gameState?.status !== 'initial'}
+          >
+            Start Game
           </button>
           <button
             className="copy-pgn-btn"

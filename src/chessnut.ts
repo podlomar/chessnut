@@ -98,6 +98,21 @@ export class ChessnutDriver {
     this.onNewState = onNewState;
   }
 
+  public startGame(): void {
+    if (this.currentState?.status !== 'initial') {
+      return;
+    }
+
+    const chess = new Chess();
+    this.currentState = {
+      placement: initialPlacement,
+      chess,
+      status: 'playing',
+    };
+    this.validMoves = chess.moves({ verbose: true });
+    this.onNewState(this.currentState);
+  }
+
   public async connect() {
     const devices = await navigator.hid.requestDevice({
       filters: [{
@@ -139,43 +154,34 @@ export class ChessnutDriver {
 
       this.lastData = newData;
       const placement = readPlacement(newData);
-      if (this.currentState === null || this.currentState.status !== 'playing') {
-        if (placement === initialPlacement) {
-          this.currentState = {
-            placement,
-            status: 'initial'
-          };
 
-          this.validMoves = [];
-          this.onNewState(this.currentState);
-          return;
+      if (this.currentState?.status === 'playing') {
+        for (const move of this.validMoves) {
+          const afterPlacement = getPlacement(move.after);
+          if (afterPlacement === placement) {
+            console.log("Detected move:", move);
+            this.currentState.chess.move(move);
+            this.validMoves = this.currentState.chess.moves({ verbose: true });
+            this.currentState = {
+              placement,
+              chess: this.currentState.chess,
+              status: 'playing',
+            };
+
+            this.onNewState(this.currentState);
+            break;
+          }
         }
-
-        this.currentState = {
-          placement,
-          status: 'random'
-        };
-        this.validMoves = [];
-        this.onNewState(this.currentState);
         return;
       }
 
-      if (this.currentState.status !== 'playing') {
-        return;
-      }
-
-      // for (const move of this.validMoves) {
-      //   const afterPlacement = getPlacement(move.after);
-      //   if (afterPlacement === placement) {
-      //     console.log("Detected move:", move);
-      //     this.currentState.chess.move(move);
-      //     this.validMoves = this.currentState.chess.moves({ verbose: true });
-      //     this.currentState = { chess: this.currentState.chess };
-
-      //     this.onNewState(this.currentState);
-      //     break;
-      //   }
-      // }
+      const newState: GameState = {
+        placement,
+        status: placement === initialPlacement ? 'initial' : 'random',
+      };
+      this.currentState = newState;
+      this.validMoves = [];
+      this.onNewState(newState);
     });
   }
 }

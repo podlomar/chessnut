@@ -50,7 +50,7 @@ export const App = () => {
   return (
     <div className="container">
       <header className="app-header">
-        <h1 className="app-title">Chessnut</h1>
+        <h1 className="app-title">Chessnut Play</h1>
         <div className="header-buttons">
           <button className="connect-btn" onClick={handleConnect}>
             Connect Board

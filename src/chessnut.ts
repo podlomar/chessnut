@@ -92,15 +92,37 @@ export class ChessnutDriver {
   private validMoves: Move[] = [];
   private onNewState: ((state: GameState) => void);
   private lastData: Uint8Array | null = null;
+  private wakeLock: WakeLockSentinel | null = null;
 
   public constructor(onNewState: (state: GameState) => void) {
     this.onNewState = onNewState;
   }
 
-  public startGame(): void {
+  private async acquireWakeLock(): Promise<void> {
+    try {
+      if ('wakeLock' in navigator) {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+        console.log('Wake lock acquired');
+      }
+    } catch (err) {
+      console.error('Failed to acquire wake lock:', err);
+    }
+  }
+
+  private async releaseWakeLock(): Promise<void> {
+    if (this.wakeLock !== null) {
+      await this.wakeLock.release();
+      this.wakeLock = null;
+      console.log('Wake lock released');
+    }
+  }
+
+  public async startGame(): Promise<void> {
     if (this.currentState?.status !== 'initial') {
       return;
     }
+
+    await this.acquireWakeLock();
 
     const chess = new Chess();
     this.currentState = {

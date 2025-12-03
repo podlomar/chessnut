@@ -1,15 +1,25 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChessBoard } from './components/ChessBoard';
 import { ChessnutDriver, GameState } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
 import './styles.css';
-import { emptyDiff } from './placement';
+import { emptyDiff, getDiffSize } from './placement';
 
 const cleanPgn = (pgn: string): string => {
   return pgn
     .replace(/\[.*\]\n/g, '') // Remove header tags
     .replace(/\s+/g, ' ')     // Replace multiple spaces/newlines with single space
     .trim();                  // Trim leading/trailing whitespace
+};
+
+const playDing = () => {
+  const dingSound = new Audio('/sounds/ding.mp3');
+  dingSound.play();
+}
+
+const playError = () => {
+  // const errorSound = new Audio('/sounds/error2.mp3');
+  // errorSound.play();
 };
 
 export const placementToAscii = (placement: string): string[] => {
@@ -63,6 +73,22 @@ export const App = () => {
       console.error('Failed to copy PGN:', err);
     }
   };
+
+  useEffect(() => {
+    if (gameState?.status !== 'playing') {
+      return;
+    }
+
+    if (gameState.mismatch) {
+      console.log('Position mismatch detected', gameState.diff.length);
+      const diffSize = getDiffSize(gameState.diff);
+      if (diffSize > 1) {
+        playError();
+      }
+    } else {
+      playDing();
+    }
+  }, [gameState]);
 
   return (
     <div className="container">

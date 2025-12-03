@@ -45,6 +45,18 @@ export const emptyDiff = (): PlacementDiff => {
   );
 };
 
+export const getDiffSize = (diff: PlacementDiff): number => {
+  let size = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      if (diff[r][f] !== null) {
+        size++;
+      }
+    }
+  }
+  return size;
+};
+
 export class Placement {
   public readonly squares: readonly (Piece | null)[][];
   public static readonly INITIAL = Placement.fromFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR');

@@ -75,6 +75,20 @@ export const App = () => {
   };
 
   useEffect(() => {
+    const handleSpaceKey = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        driverRef.current?.startGame();
+      }
+    };
+
+    window.addEventListener('keydown', handleSpaceKey);
+    return () => {
+      window.removeEventListener('keydown', handleSpaceKey);
+    };
+  }, []);
+
+  useEffect(() => {
     if (gameState?.status !== 'playing') {
       return;
     }

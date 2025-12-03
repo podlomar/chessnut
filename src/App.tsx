@@ -3,6 +3,7 @@ import { ChessBoard } from './components/ChessBoard';
 import { ChessnutDriver, GameState } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
 import './styles.css';
+import { emptyDiff } from './placement';
 
 const cleanPgn = (pgn: string): string => {
   return pgn
@@ -101,6 +102,7 @@ export const App = () => {
             placement={gameState.placement}
             dimmed={gameState.status === 'random'}
             accented={gameState.status === 'playing' && gameState.mismatch}
+            diff={gameState.status === 'playing' ? gameState.diff : emptyDiff()}
           />
         )}
         <MovesHistory

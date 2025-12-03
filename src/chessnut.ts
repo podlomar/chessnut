@@ -1,5 +1,5 @@
 import { Chess, Move } from 'chess.js';
-import { Placement } from './placement';
+import { emptyDiff, Placement, PlacementDiff } from './placement';
 
 const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   for (let i = 0; i < data1.length; i++) {
@@ -24,6 +24,7 @@ interface PlayingState {
   chess: Chess;
   status: 'playing';
   mismatch: boolean;
+  diff: PlacementDiff;
 }
 
 interface RandomState {
@@ -76,6 +77,7 @@ export class ChessnutDriver {
       chess,
       status: 'playing',
       mismatch: false,
+      diff: emptyDiff(),
     };
     this.validMoves = chess.moves({ verbose: true });
     this.onNewState(this.currentState);
@@ -96,6 +98,7 @@ export class ChessnutDriver {
       chess: this.currentState.chess,
       status: 'playing',
       mismatch: false,
+      diff: emptyDiff(),
     };
     this.validMoves = this.currentState.chess.moves({ verbose: true });
     this.onNewState(this.currentState);
@@ -166,6 +169,7 @@ export class ChessnutDriver {
             chess: this.currentState.chess,
             status: 'playing',
             mismatch: false,
+            diff: emptyDiff(),
           };
 
           this.onNewState(this.currentState);
@@ -179,6 +183,7 @@ export class ChessnutDriver {
         chess: this.currentState.chess,
         status: 'playing',
         mismatch: !expectedPlacement.equals(placement),
+        diff: expectedPlacement.diff(placement),
       };
       this.onNewState(this.currentState);
       return;

@@ -22,6 +22,10 @@
   transition: background-color 0.15s;
 }
 
+.cell__accented {
+  background-color: red !important;
+}
+
 .row:first-child .cell:first-child {
   border-top-left-radius: 4px;
 }

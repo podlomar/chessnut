@@ -26,10 +26,23 @@ const pieces: (Piece | null)[] = [
   { type: 'k', color: 'w' },
 ];
 
+export interface SquareChange {
+  from: Piece | null;
+  to: Piece | null;
+}
+
+export type PlacementDiff = (SquareChange | null)[][];
+
 const byteIndexToPos = (index: number, part: 'low' | 'high'): Pos => {
   const rank = Math.floor(index / 4);
   const file = (((31 - index) % 4) * 2) + (part === 'low' ? 1 : 0);
   return { file, rank };
+};
+
+export const emptyDiff = (): PlacementDiff => {
+  return Array.from(
+    { length: 8 }, () => Array(8).fill(null)
+  );
 };
 
 export class Placement {
@@ -164,5 +177,29 @@ export class Placement {
 
   public ranksMap<T>(fn: (rank: (Piece | null)[], index: number) => T): T[] {
     return this.squares.map(fn);
+  }
+
+  public diff(other: Placement): PlacementDiff {
+    const diff: PlacementDiff = emptyDiff();
+
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const oldPiece = this.squares[r][f];
+        const newPiece = other.squares[r][f];
+
+        const piecesEqual =
+          (oldPiece === null && newPiece === null) ||
+          (oldPiece !== null &&
+            newPiece !== null &&
+            oldPiece.type === newPiece.type &&
+            oldPiece.color === newPiece.color);
+
+        if (!piecesEqual) {
+          diff[r][f] = { from: oldPiece, to: newPiece };
+        }
+      }
+    }
+
+    return diff;
   }
 }

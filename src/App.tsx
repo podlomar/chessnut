@@ -2,12 +2,29 @@ import { useRef, useState } from 'react';
 import { ChessBoard } from './components/ChessBoard';
 import { ChessnutDriver, GameState, readPlacement } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
+import './styles.css';
 
 const cleanPgn = (pgn: string): string => {
   return pgn
     .replace(/\[.*\]\n/g, '') // Remove header tags
     .replace(/\s+/g, ' ')     // Replace multiple spaces/newlines with single space
     .trim();                  // Trim leading/trailing whitespace
+};
+
+export const placementToAscii = (placement: string): string[] => {
+  const rows = placement.split('/');
+  return rows
+    .map(row => {
+      let asciiRow = '';
+      for (const char of row) {
+        if (isNaN(Number(char))) {
+          asciiRow += char;
+        } else {
+          asciiRow += '.'.repeat(Number(char));
+        }
+      }
+      return asciiRow;
+    });
 };
 
 export const App = () => {
@@ -18,7 +35,6 @@ export const App = () => {
   const handleConnect = () => {
     const driver = new ChessnutDriver((state => {
       setGameState(state);
-      console.log("New game state:", state.status);
     }));
     driverRef.current = driver;
     driver.connect();
@@ -84,6 +100,7 @@ export const App = () => {
           <ChessBoard
             placement={gameState.placement}
             dimmed={gameState.status === 'random'}
+            accented={gameState.status === 'playing' && gameState.mismatch}
           />
         )}
         <MovesHistory
@@ -93,6 +110,21 @@ export const App = () => {
               : []
           }
         />
+      </div>
+      <div className="position">
+        {gameState?.status !== 'playing'
+          ? null
+          : placementToAscii(gameState.placement).map(
+            (row, i) => (
+              <p key={i}>{row}</p>
+            )
+          )}
+      </div>
+      <div className="position">
+        {gameState?.status !== 'playing'
+          ? null
+          : gameState.chess.fen()
+        }
       </div>
     </div>
   );

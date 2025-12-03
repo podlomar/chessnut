@@ -5,8 +5,6 @@ export interface Piece {
   color: Color;
 }
 
-console.log("Piece symbols:", new Chess().fen());
-
 const pieces: (Piece | null)[] = [
   null,
   { type: 'q', color: 'b' },
@@ -77,6 +75,7 @@ interface PlayingState {
   placement: string;
   chess: Chess;
   status: 'playing';
+  mismatch: boolean;
 }
 
 interface RandomState {
@@ -108,6 +107,7 @@ export class ChessnutDriver {
       placement: initialPlacement,
       chess,
       status: 'playing',
+      mismatch: false,
     };
     this.validMoves = chess.moves({ verbose: true });
     this.onNewState(this.currentState);
@@ -127,6 +127,7 @@ export class ChessnutDriver {
       placement: getPlacement(this.currentState.chess.fen()),
       chess: this.currentState.chess,
       status: 'playing',
+      mismatch: false,
     };
     this.validMoves = this.currentState.chess.moves({ verbose: true });
     this.onNewState(this.currentState);
@@ -157,50 +158,70 @@ export class ChessnutDriver {
 
     const reportId = 0x21;
     await device.sendReport(reportId, new Uint8Array([0x01, 0x00]));
-    device.addEventListener("inputreport", event => {
-      const { data, reportId } = event;
-      if (reportId !== 0x01) {
-        return;
-      }
+    device.addEventListener('inputreport', this.handleReport.bind(this));
+  }
 
+  private handleReport(event: HIDInputReportEvent) {
+    const { data, reportId } = event;
+    if (reportId === 0x2a) {
       const bytes = new Uint8Array(data.buffer);
-      const newData = bytes.slice(1, 33);
-
-      if (this.lastData !== null && dataEquals(this.lastData, newData)) {
-        console.log("No changes detected");
+      if (bytes[0] === 0x02 && bytes[1] === 0x64 && bytes[2] === 0x01) {
         return;
       }
+      console.log("Detected non-placement report:", bytes);
+      return;
+    }
 
-      this.lastData = newData;
-      const placement = readPlacement(newData);
+    if (reportId !== 0x01) {
+      return;
+    }
 
-      if (this.currentState?.status === 'playing') {
-        for (const move of this.validMoves) {
-          const afterPlacement = getPlacement(move.after);
-          if (afterPlacement === placement) {
-            console.log("Detected move:", move);
-            this.currentState.chess.move(move);
-            this.validMoves = this.currentState.chess.moves({ verbose: true });
-            this.currentState = {
-              placement,
-              chess: this.currentState.chess,
-              status: 'playing',
-            };
+    const bytes = new Uint8Array(data.buffer);
+    const newData = bytes.slice(1, 33);
 
-            this.onNewState(this.currentState);
-            break;
-          }
+    if (this.lastData !== null && dataEquals(this.lastData, newData)) {
+      return;
+    }
+
+    this.lastData = newData;
+    const placement = readPlacement(newData);
+    console.log("Placement data changed:", newData.toString(), placement);
+    if (this.currentState?.status === 'playing') {
+      for (const move of this.validMoves) {
+        const afterPlacement = getPlacement(move.after);
+        if (afterPlacement === placement) {
+          console.log("Detected move:", move);
+          this.currentState.chess.move(move);
+          this.validMoves = this.currentState.chess.moves({ verbose: true });
+          this.currentState = {
+            placement,
+            chess: this.currentState.chess,
+            status: 'playing',
+            mismatch: false,
+          };
+
+          this.onNewState(this.currentState);
+          break;
         }
-        return;
       }
 
-      const newState: GameState = {
+      const expectedPlacement = getPlacement(this.currentState.chess.fen());
+      this.currentState = {
         placement,
-        status: placement === initialPlacement ? 'initial' : 'random',
+        chess: this.currentState.chess,
+        status: 'playing',
+        mismatch: expectedPlacement !== placement,
       };
-      this.currentState = newState;
-      this.validMoves = [];
-      this.onNewState(newState);
-    });
+      this.onNewState(this.currentState);
+      return;
+    }
+
+    const newState: GameState = {
+      placement,
+      status: placement === initialPlacement ? 'initial' : 'random',
+    };
+    this.currentState = newState;
+    this.validMoves = [];
+    this.onNewState(newState);
   }
 }

@@ -6,7 +6,7 @@
 }
 
 .accented {
-  background-color: #ffb400;
+  background-color: #e94560;
 }
 
 .row {
@@ -23,7 +23,7 @@
 }
 
 .cell__accented {
-  background-color: red !important;
+  background-color: #e94560 !important;
 }
 
 .row:first-child .cell:first-child {
@@ -47,11 +47,11 @@
 }
 
 .row:nth-child(odd)>.cell:nth-child(even) {
-  background-color: #b58863;
+  background-color: #c4a082;
 }
 
 .row:nth-child(even)>.cell:nth-child(odd) {
-  background-color: #b58863;
+  background-color: #c4a082;
 }
 
 .row:nth-child(even)>.cell:nth-child(even) {

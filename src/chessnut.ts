@@ -93,12 +93,15 @@ export class ChessnutDriver {
       return;
     }
 
+    const placement = this.currentState.placement;
+    const undoedPlacement = Placement.fromFen(this.currentState.chess.fen());
+    const diff = undoedPlacement.diff(placement);
     this.currentState = {
-      placement: Placement.fromFen(this.currentState.chess.fen()),
+      placement: undoedPlacement,
       chess: this.currentState.chess,
       status: 'playing',
-      mismatch: false,
-      diff: emptyDiff(),
+      mismatch: !undoedPlacement.equals(placement),
+      diff,
     };
     this.validMoves = this.currentState.chess.moves({ verbose: true });
     this.onNewState(this.currentState);

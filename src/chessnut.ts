@@ -1,57 +1,5 @@
-import { Chess, Color, Move, PieceSymbol, Square } from 'chess.js';
-
-export interface Piece {
-  type: PieceSymbol;
-  color: Color;
-}
-
-const pieces: (Piece | null)[] = [
-  null,
-  { type: 'q', color: 'b' },
-  { type: 'k', color: 'b' },
-  { type: 'b', color: 'b' },
-  { type: 'p', color: 'b' },
-  { type: 'n', color: 'b' },
-  { type: 'r', color: 'w' },
-  { type: 'p', color: 'w' },
-  { type: 'r', color: 'b' },
-  { type: 'b', color: 'w' },
-  { type: 'n', color: 'w' },
-  { type: 'q', color: 'w' },
-  { type: 'k', color: 'w' },
-];
-
-const boardFiles = 'abcdefgh';
-
-const byteToSquare = (index: number, part: 'low' | 'high'): Square => {
-  const idx = 31 - index;
-  const rank = Math.floor(idx / 4) + 1;
-  const fileIndex = ((idx % 4) * 2) + (part === 'low' ? 1 : 0);
-  return `${boardFiles[fileIndex]}${rank}` as Square;
-}
-
-export const readPlacement = (data: Uint8Array): string => {
-  const chess = new Chess();
-  chess.clear();
-
-  for (let i = 0; i < 32; i++) {
-    const low = data[i] & 0x0F;
-    const lowSquare = byteToSquare(i, 'low');
-    const lowPiece = pieces[low];
-    if (lowPiece !== null) {
-      chess.put(lowPiece, lowSquare);
-    }
-
-    const high = (data[i] >> 4) & 0x0F;
-    const highSquare = byteToSquare(i, 'high');
-    const highPiece = pieces[high];
-    if (highPiece !== null) {
-      chess.put(highPiece, highSquare);
-    }
-  }
-
-  return getPlacement(chess.fen());
-}
+import { Chess, Move } from 'chess.js';
+import { Placement } from './placement';
 
 const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   for (let i = 0; i < data1.length; i++) {
@@ -67,25 +15,23 @@ const getPlacement = (fen: string): string => {
 };
 
 interface InitialState {
-  placement: string;
+  placement: Placement;
   status: 'initial';
 }
 
 interface PlayingState {
-  placement: string;
+  placement: Placement;
   chess: Chess;
   status: 'playing';
   mismatch: boolean;
 }
 
 interface RandomState {
-  placement: string;
+  placement: Placement;
   status: 'random';
 }
 
 export type GameState = InitialState | PlayingState | RandomState;
-
-const initialPlacement = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
 
 export class ChessnutDriver {
   private currentState: GameState | null = null;
@@ -126,7 +72,7 @@ export class ChessnutDriver {
 
     const chess = new Chess();
     this.currentState = {
-      placement: initialPlacement,
+      placement: Placement.INITIAL,
       chess,
       status: 'playing',
       mismatch: false,
@@ -146,7 +92,7 @@ export class ChessnutDriver {
     }
 
     this.currentState = {
-      placement: getPlacement(this.currentState.chess.fen()),
+      placement: Placement.fromFen(this.currentState.chess.fen()),
       chess: this.currentState.chess,
       status: 'playing',
       mismatch: false,
@@ -206,13 +152,13 @@ export class ChessnutDriver {
     }
 
     this.lastData = newData;
-    const placement = readPlacement(newData);
-    console.log("Placement data changed:", newData.toString(), placement);
+    const placement = Placement.fromBytes(newData);
+    console.log("Placement data changed:", newData.toString(), placement.toFen());
     if (this.currentState?.status === 'playing') {
       for (const move of this.validMoves) {
-        const afterPlacement = getPlacement(move.after);
-        if (afterPlacement === placement) {
-          console.log("Detected move:", move);
+        const afterPlacement = Placement.fromFen(move.after);
+        if (afterPlacement.equals(placement)) {
+          console.log("Detected move:", move.lan);
           this.currentState.chess.move(move);
           this.validMoves = this.currentState.chess.moves({ verbose: true });
           this.currentState = {
@@ -227,12 +173,12 @@ export class ChessnutDriver {
         }
       }
 
-      const expectedPlacement = getPlacement(this.currentState.chess.fen());
+      const expectedPlacement = Placement.fromFen(this.currentState.chess.fen());
       this.currentState = {
         placement,
         chess: this.currentState.chess,
         status: 'playing',
-        mismatch: expectedPlacement !== placement,
+        mismatch: !expectedPlacement.equals(placement),
       };
       this.onNewState(this.currentState);
       return;
@@ -240,7 +186,7 @@ export class ChessnutDriver {
 
     const newState: GameState = {
       placement,
-      status: placement === initialPlacement ? 'initial' : 'random',
+      status: placement.isInitial() ? 'initial' : 'random',
     };
     this.currentState = newState;
     this.validMoves = [];

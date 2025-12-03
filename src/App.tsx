@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { ChessBoard } from './components/ChessBoard';
-import { ChessnutDriver, GameState, readPlacement } from './chessnut';
+import { ChessnutDriver, GameState } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
 import './styles.css';
 
@@ -114,7 +114,7 @@ export const App = () => {
       <div className="position">
         {gameState?.status !== 'playing'
           ? null
-          : placementToAscii(gameState.placement).map(
+          : gameState.placement.toAscii().map(
             (row, i) => (
               <p key={i}>{row}</p>
             )

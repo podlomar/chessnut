@@ -1,60 +1,23 @@
-import { Color, PieceSymbol } from 'chess.js';
 import { ChessPiece } from '../ChessPiece';
+import { Placement } from '../../placement';
 import './styles.css';
 
-interface Piece {
-  symbol: PieceSymbol;
-  color: Color;
-}
-
-type BoardPlan = (Piece | null)[][];
-
-const buildBoardPlan = (placement: string): BoardPlan => {
-  const rows = placement.split('/');
-  const boardPlan: BoardPlan = [];
-
-  for (let r = 0; r < 8; r++) {
-    const row = rows[r];
-    const boardRow: (Piece | null)[] = [];
-    for (let i = 0; i < row.length; i++) {
-      const char = row[i];
-      if (isNaN(Number(char))) {
-        const isUpper = char === char.toUpperCase();
-        boardRow.push({
-          symbol: char.toLowerCase() as PieceSymbol,
-          color: isUpper ? 'w' : 'b',
-        });
-      } else {
-        const emptyCount = Number(char);
-        for (let j = 0; j < emptyCount; j++) {
-          boardRow.push(null);
-        }
-      }
-    }
-    boardPlan.push(boardRow);
-  }
-
-  return boardPlan;
-};
-
 interface Props {
-  placement: string;
+  placement: Placement;
   dimmed?: boolean;
   accented?: boolean;
 }
 
 export const ChessBoard = ({ placement, dimmed = true, accented = false }: Props) => {
-  const plan = buildBoardPlan(placement);
-
   return (
     <div className={`chess-board ${dimmed ? 'dimmed' : ''} ${accented ? 'accented' : ''}`}>
-      {plan.map((row, rowIndex) => (
-        <div className="row" key={rowIndex}>
-          {row.map((piece, colIndex) => (
-            <div className="cell" key={colIndex}>
+      {placement.ranksMap((rank, rankIndex) => (
+        <div className="row" key={rankIndex}>
+          {rank.map((piece, fileIndex) => (
+            <div className="cell" key={fileIndex}>
               {piece === null
-                ? null :
-                <ChessPiece symbol={piece.symbol} color={piece.color} />}
+                ? null
+                : <ChessPiece type={piece.type} color={piece.color} />}
             </div>
           ))}
         </div>

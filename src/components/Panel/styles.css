@@ -8,5 +8,9 @@
 .panel__title {
   font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.panel__footer {
+  margin-top: 1.5rem;
 }

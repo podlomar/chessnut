@@ -1,0 +1,13 @@
+.connect-page {
+  display: flex;
+  justify-content: center;
+}
+
+.connect-panel {
+  max-width: 30rem;
+}
+
+.connect-actions {
+  display: flex;
+  justify-content: center;
+}

@@ -35,14 +35,53 @@ interface RandomState {
 export type GameState = InitialState | PlayingState | RandomState;
 
 export class ChessnutDriver {
+  private device: HIDDevice;;
   private currentState: GameState | null = null;
   private validMoves: Move[] = [];
-  private onNewState: ((state: GameState) => void);
+  private onNewState?: ((state: GameState) => void);
   private lastData: Uint8Array | null = null;
   private wakeLock: WakeLockSentinel | null = null;
 
-  public constructor(onNewState: (state: GameState) => void) {
-    this.onNewState = onNewState;
+  private constructor(device: HIDDevice) {
+    this.device = device;
+    this.device.addEventListener('inputreport', this.handleReport.bind(this));
+  }
+
+  public static async connect(): Promise<ChessnutDriver | null> {
+    const devices = await navigator.hid.requestDevice({
+      filters: [{
+        vendorId: 0x2d80,
+        usagePage: 0xFF00
+      }]
+    });
+
+    if (devices.length === 0) {
+      return null;
+    }
+
+    const device = devices[0];
+    await device.open();
+    const collection = device.collections.find(
+      c => c.usagePage === 0xFF00
+    );
+
+    if (!collection) {
+      console.error("Could not find usagePage 0xFF00");
+      return null;
+    }
+
+    const reportId = 0x21;
+    await device.sendReport(reportId, new Uint8Array([0x01, 0x00]));
+
+    return new ChessnutDriver(device);
+  }
+
+  public onStateChange(callback: (state: GameState) => void): void {
+    this.onNewState = callback;
+  }
+
+  public offStateChange(): void {
+    this.onNewState = undefined;
   }
 
   private async acquireWakeLock(): Promise<void> {
@@ -80,7 +119,7 @@ export class ChessnutDriver {
       diff: emptyDiff(),
     };
     this.validMoves = chess.moves({ verbose: true });
-    this.onNewState(this.currentState);
+    this.onNewState?.(this.currentState);
   }
 
   public takeBack(): void {
@@ -104,35 +143,7 @@ export class ChessnutDriver {
       diff,
     };
     this.validMoves = this.currentState.chess.moves({ verbose: true });
-    this.onNewState(this.currentState);
-  }
-
-  public async connect() {
-    const devices = await navigator.hid.requestDevice({
-      filters: [{
-        vendorId: 0x2d80,
-        usagePage: 0xFF00
-      }]
-    });
-
-    if (devices.length === 0) {
-      return;
-    }
-
-    const device = devices[0];
-    await device.open();
-    const collection = device.collections.find(
-      c => c.usagePage === 0xFF00
-    );
-
-    if (!collection) {
-      console.error("Could not find usagePage 0xFF00");
-      return;
-    }
-
-    const reportId = 0x21;
-    await device.sendReport(reportId, new Uint8Array([0x01, 0x00]));
-    device.addEventListener('inputreport', this.handleReport.bind(this));
+    this.onNewState?.(this.currentState);
   }
 
   private handleReport(event: HIDInputReportEvent) {
@@ -175,7 +186,7 @@ export class ChessnutDriver {
             diff: emptyDiff(),
           };
 
-          this.onNewState(this.currentState);
+          this.onNewState?.(this.currentState);
           break;
         }
       }
@@ -188,7 +199,7 @@ export class ChessnutDriver {
         mismatch: !expectedPlacement.equals(placement),
         diff: expectedPlacement.diff(placement),
       };
-      this.onNewState(this.currentState);
+      this.onNewState?.(this.currentState);
       return;
     }
 
@@ -198,6 +209,6 @@ export class ChessnutDriver {
     };
     this.currentState = newState;
     this.validMoves = [];
-    this.onNewState(newState);
+    this.onNewState?.(newState);
   }
 }

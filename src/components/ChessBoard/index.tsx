@@ -1,7 +1,8 @@
+import clsx from 'clsx';
+import { Panel } from '../Panel';
 import { ChessPiece } from '../ChessPiece';
 import { Placement, PlacementDiff } from '../../placement';
 import './styles.css';
-import { Square } from 'chess.js';
 
 interface Props {
   placement: Placement;
@@ -13,7 +14,7 @@ interface Props {
 export const ChessBoard = (
   { placement, dimmed, accented, diff }: Props) => {
   return (
-    <div className={`chess-board ${dimmed ? 'dimmed' : ''} ${accented ? 'accented' : ''}`}>
+    <Panel className={clsx({ dimmed, accented })}>
       {placement.ranksMap((rank, rankIndex) => (
         <div className="row" key={rankIndex}>
           {rank.map((piece, fileIndex) => {
@@ -39,6 +40,6 @@ export const ChessBoard = (
           })}
         </div>
       ))}
-    </div>
+    </Panel>
   );
 };

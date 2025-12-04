@@ -1,3 +1,4 @@
+import { Panel } from "../Panel";
 import { Move } from "chess.js";
 import './styles.css';
 
@@ -16,8 +17,7 @@ export const MovesHistory = ({ history }: Props) => {
   }
 
   return (
-    <div className="moves-history">
-      <h2 className="moves-history__title">Moves History</h2>
+    <Panel title="Moves History" className="moves-history">
       {history.length === 0 ? (
         <p className="moves-history__empty">No moves yet. Start playing!</p>
       ) : (
@@ -37,6 +37,6 @@ export const MovesHistory = ({ history }: Props) => {
           ))}
         </ul>
       )}
-    </div>
+    </Panel>
   );
 };

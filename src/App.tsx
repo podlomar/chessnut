@@ -23,22 +23,6 @@ const playError = () => {
   // errorSound.play();
 };
 
-export const placementToAscii = (placement: string): string[] => {
-  const rows = placement.split('/');
-  return rows
-    .map(row => {
-      let asciiRow = '';
-      for (const char of row) {
-        if (isNaN(Number(char))) {
-          asciiRow += char;
-        } else {
-          asciiRow += '.'.repeat(Number(char));
-        }
-      }
-      return asciiRow;
-    });
-};
-
 export const App = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [copied, setCopied] = useState(false);
@@ -153,21 +137,6 @@ export const App = () => {
               : []
           }
         />
-      </div>
-      <div className="position">
-        {gameState?.status !== 'playing'
-          ? null
-          : gameState.placement.toAscii().map(
-            (row, i) => (
-              <p key={i}>{row}</p>
-            )
-          )}
-      </div>
-      <div className="position">
-        {gameState?.status !== 'playing'
-          ? null
-          : gameState.chess.fen()
-        }
       </div>
     </div>
   );

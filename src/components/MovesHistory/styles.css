@@ -1,20 +1,6 @@
 .moves-history {
-  background-color: #2a2a4a;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 400px;
-}
-
-.moves-history__title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #e94560;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .moves-history__list {

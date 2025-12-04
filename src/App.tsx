@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ChessBoard } from './components/ChessBoard';
 import { ChessnutDriver, GameState } from './chessnut';
 import { MovesHistory } from './components/MovesHistory';
-import './styles.css';
 import { emptyDiff, getDiffSize } from './placement';
+import './styles.css';
+
 
 const cleanPgn = (pgn: string): string => {
   return pgn
@@ -13,7 +14,7 @@ const cleanPgn = (pgn: string): string => {
 };
 
 const playDing = () => {
-  const dingSound = new Audio('/sounds/ding.mp3');
+  const dingSound = new Audio('/sounds/tap.mp3');
   dingSound.play();
 }
 

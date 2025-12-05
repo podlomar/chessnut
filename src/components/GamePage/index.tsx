@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Button } from '../Button';
 import { ChessBoard } from '../ChessBoard';
 import { ChessnutDriver, GameState } from '../../chessnut';
 import { MovesHistory } from '../MovesHistory';
@@ -90,27 +91,24 @@ export const GamePage = ({ driver }: Props) => {
       <header className="app-header">
         <h1 className="app-title">Chessnut Play</h1>
         <div className="header-buttons">
-          <button
-            className="start-btn"
+          <Button primary
             onClick={handleStartGame}
             disabled={gameState?.status !== 'initial'}
           >
             Start Game
-          </button>
-          <button
-            className="takeback-btn"
+          </Button>
+          <Button
             onClick={handleTakeBack}
             disabled={gameState?.status !== 'playing' || gameState.chess.history().length === 0}
           >
             Take Back
-          </button>
-          <button
-            className="copy-pgn-btn"
+          </Button>
+          <Button
             onClick={handleCopyPgn}
-            disabled={!gameState}
+            disabled={gameState === null || gameState.status !== 'playing' || gameState.chess.history().length === 0}
           >
             {copied ? '✓ Copied!' : 'Copy PGN'}
-          </button>
+          </Button>
         </div>
       </header>
 

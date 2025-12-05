@@ -22,7 +22,7 @@ export const ConnectPage = ({ onDriverConnect }: Props) => {
         className="connect-panel"
         footer={(
           <div className="connect-actions">
-            <Button onClick={handleConnect}>
+            <Button primary onClick={handleConnect}>
               Connect Board
             </Button>
           </div>

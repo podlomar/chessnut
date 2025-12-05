@@ -14,6 +14,11 @@ const cleanPgn = (pgn: string): string => {
 };
 
 const playDing = () => {
+  const dingSound = new Audio('/sounds/ding.mp3');
+  dingSound.play();
+}
+
+const playTap = () => {
   const dingSound = new Audio('/sounds/tap.mp3');
   dingSound.play();
 }
@@ -75,6 +80,11 @@ export const GamePage = ({ driver }: Props) => {
       return;
     }
 
+    if (gameState.placement.isInitial() && gameState.mismatch === false) {
+      playDing();
+      return;
+    }
+
     if (gameState.mismatch) {
       console.log('Position mismatch detected', gameState.diff.length);
       const diffSize = getDiffSize(gameState.diff);
@@ -82,7 +92,7 @@ export const GamePage = ({ driver }: Props) => {
         playError();
       }
     } else {
-      playDing();
+      playTap();
     }
   }, [gameState]);
 

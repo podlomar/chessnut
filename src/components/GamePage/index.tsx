@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../Button';
 import { ChessBoard } from '../ChessBoard';
 import { ChessnutDriver, GameState } from '../../chess-lib/chessnut';
@@ -13,6 +13,9 @@ const cleanPgn = (pgn: string): string => {
     .trim();                  // Trim leading/trailing whitespace
 };
 
+const errorSound = new Audio('/sounds/error.mp3');
+errorSound.load();
+
 const playDing = () => {
   const dingSound = new Audio('/sounds/ding.mp3');
   dingSound.play();
@@ -22,11 +25,6 @@ const playTap = () => {
   const dingSound = new Audio('/sounds/tap.mp3');
   dingSound.play();
 }
-
-const playError = () => {
-  // const errorSound = new Audio('/sounds/error2.mp3');
-  // errorSound.play();
-};
 
 interface Props {
   driver: ChessnutDriver;
@@ -85,6 +83,8 @@ export const GamePage = ({ driver }: Props) => {
     }
   };
 
+  const errorTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     console.log('Game state updated:', gameState);
     if (gameState?.status !== 'playing') {
@@ -92,17 +92,32 @@ export const GamePage = ({ driver }: Props) => {
     }
 
     if (gameState.position.isInitial() && gameState.feedback.isEmpty()) {
+      window.clearInterval(errorTimerRef.current ?? undefined);
+      errorTimerRef.current = null;
       playDing();
       return;
     }
 
     if (gameState.returned) {
+      window.clearInterval(errorTimerRef.current ?? undefined);
+      errorTimerRef.current = null;
       playDing();
       return;
     }
 
     if (gameState.feedback.isEmpty()) {
+      window.clearInterval(errorTimerRef.current ?? undefined);
+      errorTimerRef.current = null;
       playTap();
+      return;
+    }
+
+    if (gameState.feedback.hasErrors()) {
+      if (errorTimerRef.current === null) {
+        errorTimerRef.current = window.setInterval(() => {
+          errorSound.play();
+        }, 1500);
+      }
     }
   }, [gameState]);
 

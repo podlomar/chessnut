@@ -254,6 +254,17 @@ export class BoardFeedback {
     }
     return true;
   }
+
+  public hasErrors(): boolean {
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        if (this.squares[r][f] !== null && this.squares[r][f]?.type === 'error') {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }
 
 export const emptyFeedbackSquares = (): (SquareFeedback | null)[][] => {

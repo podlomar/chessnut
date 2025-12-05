@@ -1,5 +1,5 @@
 import { Chess, Move } from 'chess.js';
-import { emptyDiff, Placement, PlacementDiff } from './placement';
+import { BoardFeedback, BoardPosition, emptyDiff, Placement, PlacementDiff } from './placement';
 
 const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   for (let i = 0; i < data1.length; i++) {
@@ -10,21 +10,12 @@ const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   return true;
 }
 
-const getPlacement = (fen: string): string => {
-  return fen.split(' ')[0];
-};
-
-interface InitialState {
-  placement: Placement;
-  status: 'initial';
-}
-
 interface PlayingState {
-  placement: Placement;
+  position: BoardPosition;
   chess: Chess;
   status: 'playing';
-  mismatch: boolean;
-  diff: PlacementDiff;
+  feedback: BoardFeedback;
+  returned: boolean;
 }
 
 interface RandomState {
@@ -32,7 +23,7 @@ interface RandomState {
   status: 'random';
 }
 
-export type GameState = InitialState | PlayingState | RandomState;
+export type GameState = PlayingState | RandomState;
 
 export class ChessnutDriver {
   private device: HIDDevice;;
@@ -104,7 +95,15 @@ export class ChessnutDriver {
   }
 
   public async startGame(): Promise<void> {
-    if (this.currentState?.status !== 'initial') {
+    if (this.currentState === null) {
+      return;
+    }
+
+    if (this.currentState.status === 'playing') {
+      return;
+    }
+
+    if (!this.currentState.placement.isInitial()) {
       return;
     }
 
@@ -112,11 +111,11 @@ export class ChessnutDriver {
 
     const chess = new Chess();
     this.currentState = {
-      placement: Placement.INITIAL,
+      position: new BoardPosition(Placement.INITIAL, 'w'),
       chess,
       status: 'playing',
-      mismatch: false,
-      diff: emptyDiff(),
+      feedback: BoardFeedback.empty(),
+      returned: false,
     };
     this.validMoves = chess.moves({ verbose: true });
     this.onNewState?.(this.currentState);
@@ -132,15 +131,17 @@ export class ChessnutDriver {
       return;
     }
 
-    const placement = this.currentState.placement;
-    const undoedPlacement = Placement.fromFen(this.currentState.chess.fen());
-    const diff = undoedPlacement.diff(placement);
+    const position = this.currentState.position;
+    const undoedPosition = BoardPosition.fromFen(
+      this.currentState.chess.fen()
+    );
+    const feedback = undoedPosition.buildFeedback(position.placement);
     this.currentState = {
-      placement: undoedPlacement,
+      position: undoedPosition,
       chess: this.currentState.chess,
       status: 'playing',
-      mismatch: !undoedPlacement.equals(placement),
-      diff,
+      feedback: undoedPosition.buildFeedback(position.placement),
+      returned: feedback.isEmpty(),
     };
     this.validMoves = this.currentState.chess.moves({ verbose: true });
     this.onNewState?.(this.currentState);
@@ -173,31 +174,33 @@ export class ChessnutDriver {
     console.log("Placement data changed:", newData.toString(), placement.toFen());
     if (this.currentState?.status === 'playing') {
       for (const move of this.validMoves) {
-        const afterPlacement = Placement.fromFen(move.after);
-        if (afterPlacement.equals(placement)) {
+        const position = BoardPosition.fromFen(move.after);
+        const feedback = position.buildFeedback(placement);
+        if (feedback.isEmpty()) {
           console.log("Detected move:", move.lan);
           this.currentState.chess.move(move);
           this.validMoves = this.currentState.chess.moves({ verbose: true });
           this.currentState = {
-            placement,
+            position,
             chess: this.currentState.chess,
             status: 'playing',
-            mismatch: false,
-            diff: emptyDiff(),
+            feedback,
+            returned: false,
           };
 
           this.onNewState?.(this.currentState);
-          break;
+          return;
         }
       }
 
-      const expectedPlacement = Placement.fromFen(this.currentState.chess.fen());
+      const expectedPosition = BoardPosition.fromFen(this.currentState.chess.fen());
+      const feedback = expectedPosition.buildFeedback(placement);
       this.currentState = {
-        placement,
+        position: expectedPosition,
         chess: this.currentState.chess,
         status: 'playing',
-        mismatch: !expectedPlacement.equals(placement),
-        diff: expectedPlacement.diff(placement),
+        feedback,
+        returned: feedback.isEmpty(),
       };
       this.onNewState?.(this.currentState);
       return;
@@ -205,7 +208,7 @@ export class ChessnutDriver {
 
     const newState: GameState = {
       placement,
-      status: placement.isInitial() ? 'initial' : 'random',
+      status: 'random',
     };
     this.currentState = newState;
     this.validMoves = [];

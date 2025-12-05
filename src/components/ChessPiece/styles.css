@@ -11,6 +11,10 @@
   filter: brightness(0.3);
 }
 
+.cell--lifted .piece {
+  opacity: 0.3;
+}
+
 .wp {
   background-image: url('/pieces/wp.svg');
 }

@@ -5,7 +5,7 @@ export interface Piece {
   color: Color;
 }
 
-export interface Pos {
+export interface SquarePos {
   rank: number;
   file: number;
 }
@@ -33,7 +33,7 @@ export interface SquareChange {
 
 export type PlacementDiff = (SquareChange | null)[][];
 
-const byteIndexToPos = (index: number, part: 'low' | 'high'): Pos => {
+const byteIndexToPos = (index: number, part: 'low' | 'high'): SquarePos => {
   const rank = Math.floor(index / 4);
   const file = (((31 - index) % 4) * 2) + (part === 'low' ? 1 : 0);
   return { file, rank };
@@ -207,11 +207,134 @@ export class Placement {
             oldPiece.color === newPiece.color);
 
         if (!piecesEqual) {
+
+
           diff[r][f] = { from: oldPiece, to: newPiece };
         }
       }
     }
 
     return diff;
+  }
+}
+
+export interface LiftedPiece {
+  type: 'lifted';
+  piece: Piece;
+}
+
+export interface ErrorSquare {
+  type: 'error';
+  piece: Piece | null;
+}
+
+export type SquareFeedback = LiftedPiece | ErrorSquare;
+
+export class BoardFeedback {
+  public readonly squares: readonly (SquareFeedback | null)[][];
+
+  public constructor(squares: (SquareFeedback | null)[][]) {
+    this.squares = squares;
+  }
+
+  public static empty(): BoardFeedback {
+    const squares: (SquareFeedback | null)[][] = Array.from(
+      { length: 8 }, () => Array(8).fill(null)
+    );
+    return new BoardFeedback(squares);
+  }
+
+  public isEmpty(): boolean {
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        if (this.squares[r][f] !== null) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+}
+
+export const emptyFeedbackSquares = (): (SquareFeedback | null)[][] => {
+  return Array.from(
+    { length: 8 }, () => Array(8).fill(null)
+  );
+};
+
+export class BoardPosition {
+  public readonly placement: Placement;
+  public readonly turn: Color;
+
+  public constructor(placement: Placement, turn: Color) {
+    this.placement = placement;
+    this.turn = turn;
+  }
+
+  public static fromFen(fen: string): BoardPosition {
+    const placement = Placement.fromFen(fen);
+    const parts = fen.split(' ');
+    const turn = parts[1] === 'w' ? 'w' : 'b';
+    return new BoardPosition(placement, turn);
+  }
+
+  public toFen(): string {
+    const placementFen = this.placement.toFen();
+    const turnFen = this.turn;
+    return `${placementFen} ${turnFen}`;
+  }
+
+  public isInitial(): boolean {
+    return this.placement.isInitial() && this.turn === 'w';
+  }
+
+  public buildFeedback(placement: Placement): BoardFeedback {
+    const feedbackSquares: (SquareFeedback | null)[][] = emptyFeedbackSquares();
+
+    const liftedSquares: SquarePos[] = [];
+
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const oldPiece = this.placement.squares[r][f];
+        const newPiece = placement.squares[r][f];
+
+        const piecesEqual =
+          (oldPiece === null && newPiece === null) ||
+          (oldPiece !== null &&
+            newPiece !== null &&
+            oldPiece.type === newPiece.type &&
+            oldPiece.color === newPiece.color);
+
+        if (!piecesEqual) {
+          if (
+            oldPiece !== null &&
+            newPiece === null &&
+            this.turn === oldPiece.color
+          ) {
+            feedbackSquares[r][f] = {
+              type: 'lifted',
+              piece: oldPiece,
+            };
+            liftedSquares.push({ rank: r, file: f });
+          } else {
+            feedbackSquares[r][f] = {
+              type: 'error',
+              piece: newPiece,
+            };
+          }
+        }
+      }
+    }
+
+    if (liftedSquares.length > 1) {
+      for (const pos of liftedSquares) {
+        feedbackSquares[pos.rank][pos.file] = {
+          type: 'error',
+          piece: this.placement.squares[pos.rank][pos.file],
+        };
+      }
+    }
+
+    return new BoardFeedback(feedbackSquares);
   }
 }

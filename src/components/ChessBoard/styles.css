@@ -15,7 +15,7 @@
   transition: background-color 0.15s;
 }
 
-.cell__accented {
+.cell--error {
   background-color: #e94560 !important;
 }
 

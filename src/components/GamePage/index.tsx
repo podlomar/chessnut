@@ -45,9 +45,19 @@ export const GamePage = ({ driver }: Props) => {
       }
     };
 
+    const handleBackspaceKey = (event: KeyboardEvent) => {
+      if (event.code === 'Backspace') {
+        event.preventDefault();
+        driver.takeBack();
+      }
+    };
+
     window.addEventListener('keydown', handleSpaceKey);
+    window.addEventListener('keydown', handleBackspaceKey);
+
     return () => {
       window.removeEventListener('keydown', handleSpaceKey);
+      window.removeEventListener('keydown', handleBackspaceKey);
       driver.offStateChange();
     };
   }, [driver]);

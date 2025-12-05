@@ -319,7 +319,7 @@ export class BoardPosition {
           } else {
             feedbackSquares[r][f] = {
               type: 'error',
-              piece: newPiece,
+              piece: oldPiece,
             };
           }
         }
@@ -330,7 +330,7 @@ export class BoardPosition {
       for (const pos of liftedSquares) {
         feedbackSquares[pos.rank][pos.file] = {
           type: 'error',
-          piece: this.placement.squares[pos.rank][pos.file],
+          piece: null,
         };
       }
     }

@@ -23,3 +23,12 @@ body {
   margin: 0 auto;
   padding: 2rem;
 }
+
+li {
+  margin-left: 2rem;
+}
+
+p,
+li {
+  margin-bottom: 0.5rem;
+}

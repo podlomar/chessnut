@@ -11,3 +11,47 @@
   display: flex;
   justify-content: center;
 }
+
+.connect-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.connect-step {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.connect-step__number {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e94560;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 50%;
+}
+
+.connect-step__content {
+  flex: 1;
+  padding-top: 0.2rem;
+}
+
+.connect-step__title {
+  font-weight: 600;
+  color: #eaeaea;
+  margin-bottom: 0.25rem;
+}
+
+.connect-step__desc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}

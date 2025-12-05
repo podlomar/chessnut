@@ -53,11 +53,35 @@ export const ConnectPage = ({ onDriverConnect }: Props) => {
         <p>
           To get started, please connect your electronic chess board by following these steps:
         </p>
-        <ol>
-          <li>Turn on your chess board by long pressing the power button until the LED indicator lights up with a green color.</li>
-          <li>Connect your chess board to your computer using a USB cable.</li>
-          <li>Click the "Connect Board" button above.</li>
-        </ol>
+        <div className="connect-steps">
+          <div className="connect-step">
+            <div className="connect-step__number">1</div>
+            <div className="connect-step__content">
+              <div className="connect-step__title">Power on the board</div>
+              <div className="connect-step__desc">
+                Long press the power button until the LED indicator lights up with a green color.
+              </div>
+            </div>
+          </div>
+          <div className="connect-step">
+            <div className="connect-step__number">2</div>
+            <div className="connect-step__content">
+              <div className="connect-step__title">Connect via USB</div>
+              <div className="connect-step__desc">
+                Connect your chess board to your computer using the provided USB cable.
+              </div>
+            </div>
+          </div>
+          <div className="connect-step">
+            <div className="connect-step__number">3</div>
+            <div className="connect-step__content">
+              <div className="connect-step__title">Pair with browser</div>
+              <div className="connect-step__desc">
+                Click the "Connect Board" button below and select your device from the popup.
+              </div>
+            </div>
+          </div>
+        </div>
       </Panel>
     </div>
   );

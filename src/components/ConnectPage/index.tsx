@@ -1,4 +1,4 @@
-import { ChessnutDriver } from "../../chessnut";
+import { ChessnutDriver } from "../../chess-lib/chessnut";
 import { Button } from "../Button";
 import { Panel } from "../Panel";
 import './styles.css';

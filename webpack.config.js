@@ -1,6 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { url } = require('inspector');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.tsx',
@@ -37,11 +37,14 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
     }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/public/sounds', to: 'sounds' },
+        { from: 'src/public/pieces', to: 'pieces' },
+      ],
+    }),
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'public'),
-    },
     open: true,
     devMiddleware: {
       writeToDisk: true,

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../Button';
 import { ChessBoard } from '../ChessBoard';
-import { ChessnutDriver, GameState } from '../../chessnut';
+import { ChessnutDriver, GameState } from '../../chess-lib/chessnut';
 import { MovesHistory } from '../MovesHistory';
-import { emptyDiff, getDiffSize } from '../../placement';
+import { emptyDiff, getDiffSize } from '../../chess-lib/placement';
 import './styles.css';
 
 const cleanPgn = (pgn: string): string => {

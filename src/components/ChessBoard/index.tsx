@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { Panel } from '../Panel';
 import { ChessPiece } from '../ChessPiece';
-import { Placement, PlacementDiff } from '../../placement';
+import { Placement, PlacementDiff } from '../../chess-lib/placement';
 import './styles.css';
 
 interface Props {

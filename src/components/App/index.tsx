@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ChessnutDriver } from './chessnut';
-import { ConnectPage } from './components/ConnectPage';
-import { GamePage } from './components/GamePage';
+import { ChessnutDriver } from '../../chess-lib/chessnut';
+import { ConnectPage } from '../ConnectPage';
+import { GamePage } from '../GamePage';
 import './styles.css';
-
 
 export const App = () => {
   const [driver, setDriver] = useState<ChessnutDriver | null>(null);
@@ -21,4 +20,4 @@ export const App = () => {
   return (
     <GamePage driver={driver} />
   );
-}
+};

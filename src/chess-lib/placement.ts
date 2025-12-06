@@ -255,6 +255,18 @@ export class BoardFeedback {
     return true;
   }
 
+  public isLiftedOnly(): boolean {
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const square = this.squares[r][f];
+        if (square !== null && square.type !== 'lifted') {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   public hasErrors(): boolean {
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {

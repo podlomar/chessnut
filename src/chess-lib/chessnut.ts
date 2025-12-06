@@ -236,13 +236,13 @@ export class ChessnutDriver {
         const feedback = position.buildFeedback(placement);
         if (feedback.isEmpty()) {
           console.log("Detected move:", move.lan);
-          const chess = new Chess(move.after);
+          this.currentState.chess.move(move);
 
-          if (chess.isGameOver()) {
+          if (this.currentState.chess.isGameOver()) {
             this.currentState = {
               position,
               status: 'over',
-              chess,
+              chess: this.currentState.chess,
             };
             this.currentMoves = this.nextMoves;
             this.releaseWakeLock();
@@ -251,11 +251,11 @@ export class ChessnutDriver {
           }
 
           this.currentMoves = this.nextMoves;
-          this.nextMoves = chess.moves({ verbose: true });
+          this.nextMoves = this.currentState.chess.moves({ verbose: true });
           this.returnPosition = currentPosition;
           this.currentState = {
             position,
-            chess,
+            chess: this.currentState.chess,
             status: 'playing',
             feedback,
             returned: false,
@@ -270,13 +270,14 @@ export class ChessnutDriver {
         const feedback = position.buildFeedback(placement);
         if (feedback.isEmpty()) {
           console.log("Detected move:", move.lan);
-          const chess = new Chess(move.after);
+          this.currentState.chess.undo();
+          this.currentState.chess.move(move);
 
-          if (chess.isGameOver()) {
+          if (this.currentState.chess.isGameOver()) {
             this.currentState = {
               position,
               status: 'over',
-              chess,
+              chess: this.currentState.chess,
             };
             this.nextMoves = [];
             this.releaseWakeLock();
@@ -284,10 +285,10 @@ export class ChessnutDriver {
             return;
           }
 
-          this.nextMoves = chess.moves({ verbose: true });
+          this.nextMoves = this.currentState.chess.moves({ verbose: true });
           this.currentState = {
             position,
-            chess,
+            chess: this.currentState.chess,
             status: 'playing',
             feedback,
             returned: false,

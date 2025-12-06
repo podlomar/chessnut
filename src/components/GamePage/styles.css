@@ -17,6 +17,10 @@
   flex-wrap: wrap;
 }
 
+.alert-container {
+  margin-bottom: 2rem;
+}
+
 .game-container {
   display: flex;
   flex-direction: column;
@@ -24,10 +28,9 @@
   gap: 2rem;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 960px) {
   .game-container {
     flex-direction: row;
     align-items: flex-start;
-    justify-content: center;
   }
 }

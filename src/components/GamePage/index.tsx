@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { JSX, useEffect, useRef, useState } from 'react';
+import { Alert } from '../Alert';
 import { Button } from '../Button';
 import { ChessBoard } from '../ChessBoard';
 import { ChessnutDriver, GameState } from '../../chess-lib/chessnut';
 import { MovesHistory } from '../MovesHistory';
 import { BoardFeedback, emptyDiff, getDiffSize } from '../../chess-lib/placement';
 import './styles.css';
+import { Chess } from 'chess.js';
 
 const cleanPgn = (pgn: string): string => {
   return pgn
@@ -28,6 +30,22 @@ const playTap = () => {
 
 interface Props {
   driver: ChessnutDriver;
+}
+
+const buildGameOverMessage = (chess: Chess): JSX.Element => {
+  if (chess.isCheckmate()) {
+    const winner = chess.turn() === 'w' ? 'Black' : 'White';
+    return <span>The game has ended in checkmate! <strong>{winner} wins</strong>.</span>;
+  } else if (chess.isStalemate()) {
+    return <span>The game has ended in stalemate!</span>;
+  } else if (chess.isThreefoldRepetition()) {
+    return <span>The game has ended in a draw by threefold repetition.</span>;
+  } else if (chess.isInsufficientMaterial()) {
+    return <span>The game has ended in a draw due to insufficient material.</span>;
+  } else if (chess.isDraw()) {
+    return <span>The game has ended in a draw.</span>;
+  }
+  return <span>The game has ended.</span>;
 }
 
 export const GamePage = ({ driver }: Props) => {
@@ -128,7 +146,7 @@ export const GamePage = ({ driver }: Props) => {
         <div className="header-buttons">
           <Button primary
             onClick={handleStartGame}
-            disabled={gameState === null || gameState.status === 'playing' || gameState.placement.isInitial() === false}
+            disabled={gameState === null || gameState.status === 'playing' || gameState.status === 'over' || gameState.placement.isInitial() === false}
           >
             Start Game
           </Button>
@@ -147,25 +165,39 @@ export const GamePage = ({ driver }: Props) => {
         </div>
       </header>
 
+      {gameState?.status === 'over' && (
+        <div className="alert-container">
+          <Alert variant="info" title="Game Over">
+            <p>{buildGameOverMessage(gameState.chess)}</p>
+          </Alert>
+        </div>
+      )}
+
       <div className="game-container">
-        {gameState !== null && (
-          gameState.status === 'random' ? (
-            <ChessBoard
-              placement={gameState.placement}
-              dimmed={gameState.placement.isInitial() === false}
-              feedback={BoardFeedback.empty()}
-            />
-          ) : (
-            <ChessBoard
-              placement={gameState.position.placement}
-              dimmed={false}
-              feedback={gameState.feedback}
-            />
-          )
+        {gameState?.status === 'random' && (
+          <ChessBoard
+            placement={gameState.placement}
+            dimmed={gameState.placement.isInitial() === false}
+            feedback={BoardFeedback.empty()}
+          />
+        )}
+        {gameState?.status === 'over' && (
+          <ChessBoard
+            placement={gameState.position.placement}
+            dimmed={true}
+            feedback={BoardFeedback.empty()}
+          />
+        )}
+        {gameState?.status === 'playing' && (
+          <ChessBoard
+            placement={gameState.position.placement}
+            dimmed={false}
+            feedback={gameState.feedback}
+          />
         )}
         <MovesHistory
           history={
-            gameState?.status === 'playing'
+            gameState?.status === 'playing' || gameState?.status === 'over'
               ? gameState.chess.history({ verbose: true })
               : []
           }

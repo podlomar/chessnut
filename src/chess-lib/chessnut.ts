@@ -18,12 +18,18 @@ interface PlayingState {
   returned: boolean;
 }
 
+interface GameOverState {
+  position: BoardPosition;
+  status: 'over';
+  chess: Chess;
+}
+
 interface RandomState {
   placement: Placement;
   status: 'random';
 }
 
-export type GameState = PlayingState | RandomState;
+export type GameState = PlayingState | RandomState | GameOverState;
 
 export class ChessnutDriver {
   private device: HIDDevice;;
@@ -103,6 +109,10 @@ export class ChessnutDriver {
       return;
     }
 
+    if (this.currentState.status === 'over') {
+      return;
+    }
+
     if (!this.currentState.placement.isInitial()) {
       return;
     }
@@ -179,6 +189,19 @@ export class ChessnutDriver {
         if (feedback.isEmpty()) {
           console.log("Detected move:", move.lan);
           this.currentState.chess.move(move);
+
+          if (this.currentState.chess.isGameOver()) {
+            this.currentState = {
+              position,
+              status: 'over',
+              chess: this.currentState.chess,
+            };
+            this.validMoves = [];
+            this.releaseWakeLock();
+            this.onNewState?.(this.currentState);
+            return;
+          }
+
           this.validMoves = this.currentState.chess.moves({ verbose: true });
           this.currentState = {
             position,
@@ -187,6 +210,8 @@ export class ChessnutDriver {
             feedback,
             returned: false,
           };
+
+          this.currentState.chess.isGameOver();
 
           this.onNewState?.(this.currentState);
           return;

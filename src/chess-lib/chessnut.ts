@@ -31,12 +31,22 @@ interface RandomState {
 
 export type GameState = PlayingState | RandomState | GameOverState;
 
+interface PendingSide {
+  color: 'w' | 'b';
+  returnPlacement: Placement;
+  validMoves: Move[];
+}
+
+interface TurnSide {
+  color: 'w' | 'b';
+  validMoves: Move[];
+}
+
 export class ChessnutDriver {
   private device: HIDDevice;;
   private currentState: GameState | null = null;
-  private returnPosition: BoardPosition | null = null;
-  private currentMoves: Move[] = [];
-  private nextMoves: Move[] = [];
+  private pendingSide: PendingSide | null = null;
+  private turnSide: TurnSide | null = null;
   private onNewState?: ((state: GameState) => void);
   private lastData: Uint8Array | null = null;
   private wakeLock: WakeLockSentinel | null = null;
@@ -59,7 +69,12 @@ export class ChessnutDriver {
     }
 
     const device = devices[0];
-    await device.open();
+    try {
+      await device.open();
+    } catch (err) {
+      console.error("Failed to open device:", err);
+      return null;
+    }
     const collection = device.collections.find(
       c => c.usagePage === 0xFF00
     );
@@ -70,7 +85,12 @@ export class ChessnutDriver {
     }
 
     const reportId = 0x21;
-    await device.sendReport(reportId, new Uint8Array([0x01, 0x00]));
+    try {
+      await device.sendReport(reportId, new Uint8Array([0x01, 0x00]));
+    } catch (err) {
+      console.error("Failed to send initialization report:", err);
+      return null;
+    }
 
     return new ChessnutDriver(device);
   }
@@ -128,9 +148,11 @@ export class ChessnutDriver {
       feedback: BoardFeedback.empty(),
       returned: false,
     };
-    this.currentMoves = [];
-    this.nextMoves = chess.moves({ verbose: true });
-    this.returnPosition = null;
+    this.pendingSide = null;
+    this.turnSide = {
+      color: 'w',
+      validMoves: chess.moves({ verbose: true }),
+    };
     this.onNewState?.(this.currentState);
   }
 
@@ -157,9 +179,11 @@ export class ChessnutDriver {
       feedback,
       returned: feedback.isEmpty(),
     };
-    this.currentMoves = [];
-    this.nextMoves = chess.moves({ verbose: true });
-    this.returnPosition = null;
+    this.pendingSide = null;
+    this.turnSide = {
+      color: chess.turn(),
+      validMoves: chess.moves({ verbose: true }),
+    };
     this.onNewState?.(this.currentState);
   }
 
@@ -201,7 +225,9 @@ export class ChessnutDriver {
         return;
       }
 
-      if (feedback.isLiftedOnly()) {
+      if (feedback.isLifted(this.turnSide!.color)) {
+        console.log("Piece lifted for color:", this.turnSide!.color);
+        console.log(feedback);
         this.currentState = {
           position: currentPosition,
           chess: this.currentState.chess,
@@ -209,15 +235,18 @@ export class ChessnutDriver {
           feedback,
           returned: false,
         };
+        this.pendingSide = null;
         this.onNewState?.(this.currentState);
         return;
       }
 
-      if (this.returnPosition !== null) {
-        if (this.returnPosition.placement.equals(placement)) {
+      console.log("Checking pending side...", this.pendingSide);
+      if (this.pendingSide !== null) {
+        const returnPlacement = this.pendingSide.returnPlacement;
+        if (returnPlacement.equals(placement)) {
           this.currentState.chess.undo();
           this.currentState = {
-            position: this.returnPosition,
+            position: new BoardPosition(returnPlacement, this.pendingSide.color),
             chess: this.currentState.chess,
             status: 'playing',
             feedback: BoardFeedback.empty(),
@@ -228,9 +257,12 @@ export class ChessnutDriver {
         }
       }
 
-      for (const move of this.nextMoves) {
+      console.log("Attempting to find matching move...", this.turnSide?.validMoves);
+
+      for (const move of this.turnSide!.validMoves) {
         const position = BoardPosition.fromFen(move.after);
         const feedback = position.buildFeedback(placement);
+        console.log("Checking move:", move.lan, "Feedback empty:", feedback.isEmpty());
         if (feedback.isEmpty()) {
           this.currentState.chess.move(move);
 
@@ -240,15 +272,20 @@ export class ChessnutDriver {
               status: 'over',
               chess: this.currentState.chess,
             };
-            this.currentMoves = this.nextMoves;
             this.releaseWakeLock();
             this.onNewState?.(this.currentState);
             return;
           }
 
-          this.currentMoves = this.nextMoves;
-          this.nextMoves = this.currentState.chess.moves({ verbose: true });
-          this.returnPosition = currentPosition;
+          this.pendingSide = {
+            color: this.turnSide!.color,
+            returnPlacement: currentPosition.placement,
+            validMoves: this.turnSide!.validMoves,
+          }
+          this.turnSide = {
+            color: this.turnSide!.color === 'w' ? 'b' : 'w',
+            validMoves: this.currentState.chess.moves({ verbose: true }),
+          };
           this.currentState = {
             position,
             chess: this.currentState.chess,
@@ -261,7 +298,7 @@ export class ChessnutDriver {
         }
       }
 
-      for (const move of this.currentMoves) {
+      for (const move of (this.pendingSide?.validMoves ?? [])) {
         const position = BoardPosition.fromFen(move.after);
         const feedback = position.buildFeedback(placement);
         if (feedback.isEmpty()) {
@@ -274,13 +311,15 @@ export class ChessnutDriver {
               status: 'over',
               chess: this.currentState.chess,
             };
-            this.nextMoves = [];
             this.releaseWakeLock();
             this.onNewState?.(this.currentState);
             return;
           }
 
-          this.nextMoves = this.currentState.chess.moves({ verbose: true });
+          this.turnSide = {
+            color: this.turnSide!.color,
+            validMoves: this.currentState.chess.moves({ verbose: true }),
+          };
           this.currentState = {
             position,
             chess: this.currentState.chess,
@@ -309,7 +348,6 @@ export class ChessnutDriver {
       status: 'random',
     };
     this.currentState = newState;
-    this.currentMoves = [];
     this.onNewState?.(newState);
   }
 }

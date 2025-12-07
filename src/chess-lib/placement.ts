@@ -255,16 +255,20 @@ export class BoardFeedback {
     return true;
   }
 
-  public isLiftedOnly(): boolean {
+  public isLifted(color: Color): boolean {
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {
         const square = this.squares[r][f];
-        if (square !== null && square.type !== 'lifted') {
-          return false;
+        if (
+          square !== null
+          && square.type === 'lifted'
+          && square.piece.color === color
+        ) {
+          return true;
         }
       }
     }
-    return true;
+    return false;
   }
 
   public hasErrors(): boolean {
@@ -314,7 +318,7 @@ export class BoardPosition {
   public buildFeedback(placement: Placement): BoardFeedback {
     const feedbackSquares: (SquareFeedback | null)[][] = emptyFeedbackSquares();
 
-    const liftedSquares: SquarePos[] = [];
+    const usedSquares: SquarePos[] = [];
 
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {
@@ -338,24 +342,31 @@ export class BoardPosition {
               type: 'lifted',
               piece: oldPiece,
             };
-            liftedSquares.push({ rank: r, file: f });
+            usedSquares.push({ rank: r, file: f });
           } else {
             feedbackSquares[r][f] = {
               type: 'error',
               piece: oldPiece,
             };
+            usedSquares.push({ rank: r, file: f });
           }
         }
       }
     }
 
-    if (liftedSquares.length > 1) {
-      for (const pos of liftedSquares) {
-        feedbackSquares[pos.rank][pos.file] = {
-          type: 'error',
-          piece: null,
-        };
-      }
+    if (usedSquares.length === 0) {
+      return new BoardFeedback(feedbackSquares);
+    }
+
+    if (usedSquares.length === 1 && feedbackSquares[usedSquares[0].rank][usedSquares[0].file]?.type === 'lifted') {
+      return new BoardFeedback(feedbackSquares);
+    }
+
+    for (const pos of usedSquares) {
+      feedbackSquares[pos.rank][pos.file] = {
+        type: 'error',
+        piece: this.placement.squares[pos.rank][pos.file],
+      };
     }
 
     return new BoardFeedback(feedbackSquares);

@@ -42,6 +42,8 @@ const buildGameOverMessage = (chess: Chess): JSX.Element => {
     return <span>The game has ended in a draw by threefold repetition.</span>;
   } else if (chess.isInsufficientMaterial()) {
     return <span>The game has ended in a draw due to insufficient material.</span>;
+  } else if (chess.isDrawByFiftyMoves()) {
+    return <span>The game has ended in a draw by the fifty-move rule.</span>;
   } else if (chess.isDraw()) {
     return <span>The game has ended in a draw.</span>;
   }

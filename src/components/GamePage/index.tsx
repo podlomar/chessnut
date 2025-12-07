@@ -87,7 +87,7 @@ export const GamePage = ({ driver }: Props) => {
   };
 
   const handleCopyPgn = async () => {
-    if (gameState === null || gameState.status !== 'playing') {
+    if (gameState === null || gameState.status === 'random') {
       return;
     }
 
@@ -151,13 +151,13 @@ export const GamePage = ({ driver }: Props) => {
           </Button>
           <Button
             onClick={handleTakeBack}
-            disabled={gameState?.status !== 'playing' || gameState.chess.history().length === 0}
+            disabled={gameState === null || gameState.status === 'random' || gameState.chess.history().length === 0}
           >
             Take Back
           </Button>
           <Button
             onClick={handleCopyPgn}
-            disabled={gameState === null || gameState.status !== 'playing' || gameState.chess.history().length === 0}
+            disabled={gameState === null || gameState.status === 'random' || gameState.chess.history().length === 0}
           >
             {copied ? '✓ Copied!' : 'Copy PGN'}
           </Button>
@@ -183,7 +183,7 @@ export const GamePage = ({ driver }: Props) => {
         {gameState?.status === 'over' && (
           <ChessBoard
             placement={gameState.position.placement}
-            dimmed={true}
+            dimmed={false}
             feedback={BoardFeedback.empty()}
           />
         )}

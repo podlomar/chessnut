@@ -157,7 +157,7 @@ export class ChessnutDriver {
   }
 
   public takeBack(): void {
-    if (this.currentState?.status !== 'playing') {
+    if (this.currentState === null || this.currentState.status === 'random') {
       return;
     }
 

@@ -107,6 +107,8 @@ export const GamePage = ({ driver }: Props) => {
 
   useEffect(() => {
     if (gameState?.status !== 'playing') {
+      window.clearInterval(errorTimerRef.current ?? undefined);
+      errorTimerRef.current = null;
       return;
     }
 

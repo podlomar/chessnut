@@ -1,11 +1,10 @@
 .moves-history {
   width: 100%;
-  max-width: 400px;
 }
 
 .moves-history__list {
   list-style: none;
-  max-height: 400px;
+  height: 100%;
   overflow-y: auto;
   padding-right: 0.5rem;
 }
@@ -66,10 +65,10 @@
 
 @media (min-width: 900px) {
   .moves-history {
-    min-width: 300px;
+    height: 31rem;
   }
 
   .moves-history__list {
-    max-height: 500px;
+    height: 100%;
   }
 }

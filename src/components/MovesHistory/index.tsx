@@ -1,6 +1,7 @@
 import { Panel } from "../Panel";
 import { Move } from "chess.js";
 import './styles.css';
+import { useEffect, useRef } from "react";
 
 interface Props {
   history: Move[];
@@ -16,12 +17,22 @@ export const MovesHistory = ({ history }: Props) => {
     });
   }
 
+  const listRef = useRef<HTMLUListElement | null>(null);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    });
+  }, [history.length]);
+
   return (
     <Panel title="Moves" className="moves-history">
       {history.length === 0 ? (
         <p className="moves-history__empty">No moves yet. Start playing!</p>
       ) : (
-        <ul className="moves-history__list">
+        <ul ref={listRef} className="moves-history__list">
           {movePairs.map((pair, index) => (
             <li key={index} className="moves-history__row">
               <span className="moves-history__number">{index + 1}.</span>

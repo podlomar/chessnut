@@ -1,4 +1,6 @@
 .panel {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   background-color: #2a2a4a;
   padding: 1.5rem;
   border-radius: 0.5rem;

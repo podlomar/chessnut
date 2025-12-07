@@ -34,8 +34,6 @@ export type GameState = PlayingState | RandomState | GameOverState;
 export class ChessnutDriver {
   private device: HIDDevice;;
   private currentState: GameState | null = null;
-  private currentStartPosition: BoardPosition | null = null;
-  private nextStartPosition: BoardPosition | null = null;
   private returnPosition: BoardPosition | null = null;
   private currentMoves: Move[] = [];
   private nextMoves: Move[] = [];
@@ -143,24 +141,27 @@ export class ChessnutDriver {
       return;
     }
 
-    const move = this.currentState.chess.undo();
+    const chess = this.currentState.chess;
+    const move = chess.undo();
     if (move === null) {
       return;
     }
 
     const position = this.currentState.position;
     const undoedPosition = BoardPosition.fromFen(
-      this.currentState.chess.fen()
+      chess.fen()
     );
     const feedback = undoedPosition.buildFeedback(position.placement);
     this.currentState = {
       position: undoedPosition,
-      chess: this.currentState.chess,
+      chess,
       status: 'playing',
       feedback,
       returned: feedback.isEmpty(),
     };
-    this.currentMoves = this.currentState.chess.moves({ verbose: true });
+    this.currentMoves = [];
+    this.nextMoves = chess.moves({ verbose: true });
+    this.returnPosition = null;
     this.onNewState?.(this.currentState);
   }
 

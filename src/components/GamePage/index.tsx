@@ -104,7 +104,6 @@ export const GamePage = ({ driver }: Props) => {
   const errorTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    console.log('Game state updated:', gameState);
     if (gameState?.status !== 'playing') {
       return;
     }

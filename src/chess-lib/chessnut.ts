@@ -87,7 +87,6 @@ export class ChessnutDriver {
     try {
       if ('wakeLock' in navigator) {
         this.wakeLock = await navigator.wakeLock.request('screen');
-        console.log('Wake lock acquired');
       }
     } catch (err) {
       console.error('Failed to acquire wake lock:', err);
@@ -98,7 +97,6 @@ export class ChessnutDriver {
     if (this.wakeLock !== null) {
       await this.wakeLock.release();
       this.wakeLock = null;
-      console.log('Wake lock released');
     }
   }
 
@@ -172,7 +170,6 @@ export class ChessnutDriver {
       if (bytes[0] === 0x02 && bytes[1] === 0x64 && bytes[2] === 0x01) {
         return;
       }
-      console.log("Detected non-placement report:", bytes);
       return;
     }
 
@@ -189,7 +186,6 @@ export class ChessnutDriver {
 
     this.lastData = newData;
     const placement = Placement.fromBytes(newData);
-    console.log("Placement data changed:", newData.toString(), placement.toFen());
     if (this.currentState?.status === 'playing') {
       const currentPosition = this.currentState.position;
       const feedback = currentPosition.buildFeedback(placement);
@@ -236,7 +232,6 @@ export class ChessnutDriver {
         const position = BoardPosition.fromFen(move.after);
         const feedback = position.buildFeedback(placement);
         if (feedback.isEmpty()) {
-          console.log("Detected move:", move.lan);
           this.currentState.chess.move(move);
 
           if (this.currentState.chess.isGameOver()) {
@@ -270,7 +265,6 @@ export class ChessnutDriver {
         const position = BoardPosition.fromFen(move.after);
         const feedback = position.buildFeedback(placement);
         if (feedback.isEmpty()) {
-          console.log("Detected move:", move.lan);
           this.currentState.chess.undo();
           this.currentState.chess.move(move);
 

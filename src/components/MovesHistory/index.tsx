@@ -17,7 +17,7 @@ export const MovesHistory = ({ history }: Props) => {
   }
 
   return (
-    <Panel title="Moves History" className="moves-history">
+    <Panel title="Moves" className="moves-history">
       {history.length === 0 ? (
         <p className="moves-history__empty">No moves yet. Start playing!</p>
       ) : (

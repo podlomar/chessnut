@@ -13,7 +13,7 @@ interface Props {
 export const ChessBoard = (
   { placement, dimmed, feedback }: Props) => {
   return (
-    <Panel className={clsx({ dimmed })}>
+    <Panel className={clsx({ dimmed, accented: feedback.hasErrors() })} contentClassName="chessboard">
       {placement.ranksMap((rank, rankIndex) => (
         <div className="row" key={rankIndex}>
           {rank.map((piece, fileIndex) => {

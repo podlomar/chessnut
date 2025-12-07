@@ -30,7 +30,7 @@ export const ConnectPage = ({ onDriverConnect }: Props) => {
             Unfortunately, your browser does not support WebUSB API which is required to connect to an electronic chess board.
           </p>
           <p>
-            Please use a compatible browser such as Google Chrome or Microsoft Edge.
+            Please use a compatible browser such as Google Chrome, Microsoft Edge or Opera.
           </p>
         </Panel>
       </div>

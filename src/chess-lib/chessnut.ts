@@ -201,6 +201,10 @@ export class ChessnutDriver {
       return;
     }
 
+    if (this.currentState?.status === 'over') {
+      return;
+    }
+
     const bytes = new Uint8Array(data.buffer);
     const newData = bytes.slice(1, 33);
 

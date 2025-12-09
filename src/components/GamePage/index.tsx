@@ -28,6 +28,11 @@ const playTap = () => {
   dingSound.play();
 }
 
+const playGameOver = () => {
+  const gameOverSound = new Audio('/sounds/over.mp3');
+  gameOverSound.play();
+}
+
 interface Props {
   driver: ChessnutDriver;
 }
@@ -106,7 +111,24 @@ export const GamePage = ({ driver }: Props) => {
   const errorTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (gameState?.status !== 'playing') {
+    if (gameState === null) {
+      return;
+    }
+
+    if (gameState.status === 'random') {
+      window.clearInterval(errorTimerRef.current ?? undefined);
+      errorTimerRef.current = null;
+      return;
+    }
+
+    if (gameState.status === 'over') {
+      window.clearInterval(errorTimerRef.current ?? undefined);
+      errorTimerRef.current = null;
+      playGameOver();
+      return;
+    }
+
+    if (gameState.status !== 'playing') {
       window.clearInterval(errorTimerRef.current ?? undefined);
       errorTimerRef.current = null;
       return;

@@ -230,8 +230,6 @@ export class ChessnutDriver {
       }
 
       if (feedback.isLifted(this.turnSide!.color)) {
-        console.log("Piece lifted for color:", this.turnSide!.color);
-        console.log(feedback);
         this.currentState = {
           position: currentPosition,
           chess: this.currentState.chess,
@@ -244,7 +242,6 @@ export class ChessnutDriver {
         return;
       }
 
-      console.log("Checking pending side...", this.pendingSide);
       if (this.pendingSide !== null) {
         const returnPlacement = this.pendingSide.returnPlacement;
         if (returnPlacement.equals(placement)) {
@@ -261,15 +258,12 @@ export class ChessnutDriver {
         }
       }
 
-      console.log("Attempting to find matching move...", this.turnSide?.validMoves);
-
       for (const move of this.turnSide!.validMoves) {
         const position = BoardPosition.fromFen(move.after);
         const feedback = position.buildFeedback(placement);
-        console.log("Checking move:", move.lan, "Feedback empty:", feedback.isEmpty());
         if (feedback.isEmpty()) {
           this.currentState.chess.move(move);
-
+          console.log("Detected move:", move.san);
           if (this.currentState.chess.isGameOver()) {
             this.currentState = {
               position,

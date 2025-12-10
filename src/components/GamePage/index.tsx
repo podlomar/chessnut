@@ -125,6 +125,9 @@ export const GamePage = ({ driver }: Props) => {
       window.clearInterval(errorTimerRef.current ?? undefined);
       errorTimerRef.current = null;
       playGameOver();
+
+      const pgn = cleanPgn(gameState.chess.pgn());
+      console.log("Game Over! PGN:\n", pgn);
       return;
     }
 

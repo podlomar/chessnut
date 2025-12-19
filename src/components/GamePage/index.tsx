@@ -75,12 +75,21 @@ export const GamePage = ({ driver }: Props) => {
       }
     };
 
+    const handleCtrlD = (event: KeyboardEvent) => {
+      if (event.key === 'd' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        driver.downloadGameLog();
+      }
+    };
+
+    window.addEventListener('keydown', handleCtrlD);
     window.addEventListener('keydown', handleSpaceKey);
     window.addEventListener('keydown', handleBackspaceKey);
 
     return () => {
       window.removeEventListener('keydown', handleSpaceKey);
       window.removeEventListener('keydown', handleBackspaceKey);
+      window.removeEventListener('keydown', handleCtrlD);
       driver.offStateChange();
     };
   }, [driver]);

@@ -1,5 +1,6 @@
 import { Chess, Move } from 'chess.js';
-import { BoardFeedback, BoardPosition, emptyDiff, Placement, PlacementDiff } from './placement';
+import { BoardFeedback, BoardPosition, Placement } from './placement';
+import { GameLog } from './game-log';
 
 const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   for (let i = 0; i < data1.length; i++) {
@@ -43,13 +44,14 @@ interface TurnSide {
 }
 
 export class ChessnutDriver {
-  private device: HIDDevice;;
+  private device: HIDDevice;
   private currentState: GameState | null = null;
   private pendingSide: PendingSide | null = null;
   private turnSide: TurnSide | null = null;
   private onNewState?: ((state: GameState) => void);
   private lastData: Uint8Array | null = null;
   private wakeLock: WakeLockSentinel | null = null;
+  private gameLog: GameLog | null = null;
 
   private constructor(device: HIDDevice) {
     this.device = device;
@@ -120,6 +122,14 @@ export class ChessnutDriver {
     }
   }
 
+  public downloadGameLog(): void {
+    if (this.gameLog === null) {
+      return;
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    this.gameLog.download(`game-log-${timestamp}.txt`);
+  }
+
   public async startGame(): Promise<void> {
     if (this.currentState === null) {
       return;
@@ -154,6 +164,7 @@ export class ChessnutDriver {
       validMoves: chess.moves({ verbose: true }),
     };
     this.onNewState?.(this.currentState);
+    this.gameLog = new GameLog();
   }
 
   public takeBack(): void {
@@ -207,10 +218,12 @@ export class ChessnutDriver {
 
     const bytes = new Uint8Array(data.buffer);
     const newData = bytes.slice(1, 33);
-
+    console.log("Received data:", Array.from(newData).map(b => b.toString(16).padStart(2, '0')).join(' '));
     if (this.lastData !== null && dataEquals(this.lastData, newData)) {
       return;
     }
+
+    this.gameLog?.addPosition(newData);
 
     this.lastData = newData;
     const placement = Placement.fromBytes(newData);

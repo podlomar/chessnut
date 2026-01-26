@@ -5,6 +5,7 @@ import { ChessnutDriver } from "./chessnut.js";
 export interface BaseState {
   readonly canStartGame: boolean;
   readonly gameStarting: boolean;
+  readonly canTakeBack: boolean;
 }
 
 export interface SettingUpState extends BaseState {
@@ -25,12 +26,13 @@ export interface GameOverState extends BaseState {
 
 export type ChessGameState = SettingUpState | InProgressState | GameOverState;
 
-export const useChessGame = (driver: ChessnutDriver): [ChessGameState, () => void] => {
+export const useChessGame = (driver: ChessnutDriver): [ChessGameState, () => void, () => void] => {
   const [gameState, setGameState] = useState<ChessGameState>(() => ({
     phase: 'setting-up',
     placement: PiecesPlacement.empty(),
     canStartGame: false,
     gameStarting: true,
+    canTakeBack: false,
   }));
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export const useChessGame = (driver: ChessnutDriver): [ChessGameState, () => voi
             placement,
             canStartGame: placement.isStarting(),
             gameStarting: true,
+            canTakeBack: false,
           };
         } else if (prevState.phase === 'in-progress') {
           const position = prevState.position.next(placement);
@@ -51,6 +54,7 @@ export const useChessGame = (driver: ChessnutDriver): [ChessGameState, () => voi
               ...prevState,
               position,
               gameStarting: position.movesHistory().length === 0,
+              canTakeBack: position.canTakeBack(),
             };
           }
 
@@ -60,6 +64,7 @@ export const useChessGame = (driver: ChessnutDriver): [ChessGameState, () => voi
             ending,
             canStartGame: false,
             gameStarting: false,
+            canTakeBack: false,
           }
         }
 
@@ -80,11 +85,33 @@ export const useChessGame = (driver: ChessnutDriver): [ChessGameState, () => voi
           position: ChessPosition.initial(),
           canStartGame: false,
           gameStarting: true,
+          canTakeBack: false,
         };
       }
       return prevState;
     });
   }, []);
 
-  return [gameState, startGame];
+  const takeBack = useCallback(() => {
+    setGameState((prevState) => {
+      if (prevState.phase === 'setting-up') {
+        return prevState;
+      }
+
+      const position = prevState.position.takeBack();
+      if (position === null) {
+        return prevState;
+      }
+
+      return {
+        phase: 'in-progress',
+        position,
+        canStartGame: false,
+        gameStarting: false,
+        canTakeBack: position.canTakeBack(),
+      };
+    })
+  }, []);
+
+  return [gameState, startGame, takeBack];
 };

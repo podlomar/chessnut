@@ -39,7 +39,7 @@ const buildGameOverMessage = (gameOverState: GameOverState): JSX.Element => {
 }
 
 export const GamePage = ({ driver }: Props) => {
-  const [gameState, startGame] = useChessGame(driver);
+  const [gameState, startGame, takeBack] = useChessGame(driver);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export const GamePage = ({ driver }: Props) => {
     const handleBackspaceKey = (event: KeyboardEvent) => {
       if (event.code === 'Backspace') {
         event.preventDefault();
-        // driver.takeBack();
+        takeBack();
       }
     };
 
@@ -87,10 +87,6 @@ export const GamePage = ({ driver }: Props) => {
       window.removeEventListener('keydown', handleFullscreen);
     };
   }, [driver]);
-
-  const handleTakeBack = () => {
-    // driver.takeBack();
-  };
 
   const handleCopyPgn = async () => {
     if (gameState.phase === 'setting-up') {
@@ -176,8 +172,8 @@ export const GamePage = ({ driver }: Props) => {
             Start Game
           </Button>
           <Button
-            onClick={handleTakeBack}
-            disabled={gameState.gameStarting}
+            onClick={takeBack}
+            disabled={!gameState.canTakeBack}
           >
             Take Back
           </Button>

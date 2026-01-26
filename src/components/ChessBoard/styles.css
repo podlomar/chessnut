@@ -1,3 +1,22 @@
+.chessboard {
+  position: relative;
+}
+
+.chessboard-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0);
+  text-align: center;
+  padding: 4rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .accented {
   background-color: #e94560;
 }
@@ -51,6 +70,10 @@
   background-color: #f0d9b5;
 }
 
+
+.dimmed .chessboard-empty {
+  color: rgba(255, 255, 255, 0.6);
+}
 
 .dimmed .row:nth-child(odd)>.cell:nth-child(odd) {
   background-color: #444;

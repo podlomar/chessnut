@@ -15,31 +15,47 @@ export const ChessBoard = (
   { placement, dimmed, status }: Props
 ): JSX.Element => {
   const accented = status?.type === 'errors';
+
+  const message = dimmed
+    ? (placement.isEmpty()
+      ? 'Place pieces on the board or move a piece if you do not see any on the board'
+      : 'Arrange the pieces to a valid starting position to start a game')
+    : (!status && placement.isStarting()
+      ? 'Press the Start Game button or spacebar to start the game'
+      : null);
+
   return (
     <Panel className={clsx({ dimmed, accented })} contentClassName="chessboard">
-      {placement.ranks().map((rank, rankIndex) => (
-        <div className="row" key={rankIndex}>
-          {rank.map((piece, fileIndex) => {
-            const square = Square.fromCoords(7 - rankIndex, fileIndex);
-            const isLifted = status?.type === 'lifted' && status.square === square;
-            const feedbackSquare = status?.type === 'errors' ? status.targets.find(error => error.square === square) : undefined;
-
-            const className = clsx('cell', {
-              'cell--lifted': isLifted,
-              'cell--error': feedbackSquare !== undefined,
-            });
-
-            const targetPiece = (feedbackSquare?.piece ?? null) ?? piece;
-            return (
-              <div className={className} key={fileIndex}>
-                {targetPiece === null
-                  ? null
-                  : <ChessPiece piece={targetPiece} />}
-              </div>
-            );
-          })}
+      {message !== null && (
+        <div className="chessboard-empty">
+          {message}
         </div>
-      ))}
+      )}
+      <div className="chessboard-grid">
+        {placement.ranks().map((rank, rankIndex) => (
+          <div className="row" key={rankIndex}>
+            {rank.map((piece, fileIndex) => {
+              const square = Square.fromCoords(7 - rankIndex, fileIndex);
+              const isLifted = status?.type === 'lifted' && status.square === square;
+              const feedbackSquare = status?.type === 'errors' ? status.targets.find(error => error.square === square) : undefined;
+
+              const className = clsx('cell', {
+                'cell--lifted': isLifted,
+                'cell--error': feedbackSquare !== undefined,
+              });
+
+              const targetPiece = (feedbackSquare?.piece ?? null) ?? piece;
+              return (
+                <div className={className} key={fileIndex}>
+                  {targetPiece === null
+                    ? null
+                    : <ChessPiece piece={targetPiece} />}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </Panel>
   );
 };

@@ -1,3 +1,4 @@
+import packageJson from "../../../package.json";
 import { ChessnutDriver } from "../../chess-lib/chessnut";
 import { Button } from "../Button";
 import { Panel } from "../Panel";
@@ -33,6 +34,7 @@ export const ConnectPage = ({ onDriverConnect }: Props) => {
             Please use a compatible browser such as Google Chrome, Microsoft Edge or Opera.
           </p>
         </Panel>
+        <div className="connect-version">v{packageJson.version}</div>
       </div>
     );
   }
@@ -83,6 +85,7 @@ export const ConnectPage = ({ onDriverConnect }: Props) => {
           </div>
         </div>
       </Panel>
+      <div className="connect-version">Chessnut Play v{packageJson.version}</div>
     </div>
   );
 }

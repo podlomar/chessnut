@@ -1,6 +1,5 @@
-import { Chess, Move } from 'chess.js';
-import { BoardFeedback, BoardPosition, Placement } from './placement';
 import { GameLog } from './game-log';
+import { Piece, PiecesPlacement } from 'chessboard-sense';
 
 const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   for (let i = 0; i < data1.length; i++) {
@@ -11,46 +10,49 @@ const dataEquals = (data1: Uint8Array, data2: Uint8Array) => {
   return true;
 }
 
-interface PlayingState {
-  position: BoardPosition;
-  chess: Chess;
-  status: 'playing';
-  feedback: BoardFeedback;
-  returned: boolean;
-}
+const chessnutPieces: (Piece | null)[] = [
+  null,
+  Piece.BLACK_QUEEN,
+  Piece.BLACK_KING,
+  Piece.BLACK_BISHOP,
+  Piece.BLACK_PAWN,
+  Piece.BLACK_KNIGHT,
+  Piece.WHITE_ROOK,
+  Piece.WHITE_PAWN,
+  Piece.BLACK_ROOK,
+  Piece.WHITE_BISHOP,
+  Piece.WHITE_KNIGHT,
+  Piece.WHITE_QUEEN,
+  Piece.WHITE_KING,
+];
 
-interface GameOverState {
-  position: BoardPosition;
-  status: 'over';
-  chess: Chess;
-}
+const reportToPlacement = (data: Uint8Array): PiecesPlacement => {
+  let placement = PiecesPlacement.empty();
 
-interface RandomState {
-  placement: Placement;
-  status: 'random';
-}
+  for (let r = 0; r < 8; r++) {
+    const rankContent: (Piece | null)[] = new Array(8).fill(null);
+    for (let f = 0; f < 4; f++) {
+      const byte = data[r * 4 + f];
+      const lowNibble = byte & 0x0F;
+      const highNibble = (byte >> 4) & 0x0F;
+      const lowIndex = 7 - f * 2;
+      const highIndex = lowIndex - 1;
 
-export type GameState = PlayingState | RandomState | GameOverState;
+      rankContent[lowIndex] = chessnutPieces[lowNibble];
+      rankContent[highIndex] = chessnutPieces[highNibble];
+    }
+    placement = placement.fillRank(r, rankContent);
+  }
 
-interface PendingSide {
-  color: 'w' | 'b';
-  returnPlacement: Placement;
-  validMoves: Move[];
-}
+  return placement;
+};
 
-interface TurnSide {
-  color: 'w' | 'b';
-  validMoves: Move[];
-}
+export type PlacementCallback = (placement: PiecesPlacement) => void;
 
 export class ChessnutDriver {
   private device: HIDDevice;
-  private currentState: GameState | null = null;
-  private pendingSide: PendingSide | null = null;
-  private turnSide: TurnSide | null = null;
-  private onNewState?: ((state: GameState) => void);
   private lastData: Uint8Array | null = null;
-  private wakeLock: WakeLockSentinel | null = null;
+  private handlePlacement: PlacementCallback = () => { };
   private gameLog: GameLog | null = null;
 
   private constructor(device: HIDDevice) {
@@ -97,29 +99,12 @@ export class ChessnutDriver {
     return new ChessnutDriver(device);
   }
 
-  public onStateChange(callback: (state: GameState) => void): void {
-    this.onNewState = callback;
+  public onPlacementChange(callback: PlacementCallback): void {
+    this.handlePlacement = callback;
   }
 
-  public offStateChange(): void {
-    this.onNewState = undefined;
-  }
-
-  private async acquireWakeLock(): Promise<void> {
-    try {
-      if ('wakeLock' in navigator) {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-      }
-    } catch (err) {
-      console.error('Failed to acquire wake lock:', err);
-    }
-  }
-
-  private async releaseWakeLock(): Promise<void> {
-    if (this.wakeLock !== null) {
-      await this.wakeLock.release();
-      this.wakeLock = null;
-    }
+  public offPlacementChange(): void {
+    this.handlePlacement = () => { };
   }
 
   public downloadGameLog(): void {
@@ -130,74 +115,6 @@ export class ChessnutDriver {
     this.gameLog.download(`game-log-${timestamp}.txt`);
   }
 
-  public async startGame(): Promise<void> {
-    if (this.currentState === null) {
-      return;
-    }
-
-    if (this.currentState.status === 'playing') {
-      return;
-    }
-
-    if (this.currentState.status === 'over') {
-      return;
-    }
-
-    if (!this.currentState.placement.isInitial()) {
-      return;
-    }
-
-    await this.acquireWakeLock();
-
-    const chess = new Chess();
-    const position = new BoardPosition(Placement.INITIAL, 'w');
-    this.currentState = {
-      position,
-      chess,
-      status: 'playing',
-      feedback: BoardFeedback.empty(),
-      returned: false,
-    };
-    this.pendingSide = null;
-    this.turnSide = {
-      color: 'w',
-      validMoves: chess.moves({ verbose: true }),
-    };
-    this.onNewState?.(this.currentState);
-    this.gameLog = new GameLog();
-  }
-
-  public takeBack(): void {
-    if (this.currentState === null || this.currentState.status === 'random') {
-      return;
-    }
-
-    const chess = this.currentState.chess;
-    const move = chess.undo();
-    if (move === null) {
-      return;
-    }
-
-    const position = this.currentState.position;
-    const undoedPosition = BoardPosition.fromFen(
-      chess.fen()
-    );
-    const feedback = undoedPosition.buildFeedback(position.placement);
-    this.currentState = {
-      position: undoedPosition,
-      chess,
-      status: 'playing',
-      feedback,
-      returned: feedback.isEmpty(),
-    };
-    this.pendingSide = null;
-    this.turnSide = {
-      color: chess.turn(),
-      validMoves: chess.moves({ verbose: true }),
-    };
-    this.onNewState?.(this.currentState);
-  }
-
   private handleReport(event: HIDInputReportEvent) {
     const { data, reportId } = event;
     if (reportId === 0x2a) {
@@ -205,14 +122,12 @@ export class ChessnutDriver {
       if (bytes[0] === 0x02 && bytes[1] === 0x64 && bytes[2] === 0x01) {
         return;
       }
+
       return;
     }
 
     if (reportId !== 0x01) {
-      return;
-    }
-
-    if (this.currentState?.status === 'over') {
+      console.log('Unknown report id', reportId);
       return;
     }
 
@@ -226,139 +141,6 @@ export class ChessnutDriver {
     this.gameLog?.addPosition(newData);
 
     this.lastData = newData;
-    const placement = Placement.fromBytes(newData);
-    if (this.currentState?.status === 'playing') {
-      const currentPosition = this.currentState.position;
-      const feedback = currentPosition.buildFeedback(placement);
-      if (feedback.isEmpty()) {
-        this.currentState = {
-          position: currentPosition,
-          chess: this.currentState.chess,
-          status: 'playing',
-          feedback,
-          returned: true,
-        };
-        this.onNewState?.(this.currentState);
-        return;
-      }
-
-      if (feedback.isLifted(this.turnSide!.color)) {
-        this.currentState = {
-          position: currentPosition,
-          chess: this.currentState.chess,
-          status: 'playing',
-          feedback,
-          returned: false,
-        };
-        this.pendingSide = null;
-        this.onNewState?.(this.currentState);
-        return;
-      }
-
-      if (this.pendingSide !== null) {
-        const returnPlacement = this.pendingSide.returnPlacement;
-        if (returnPlacement.equals(placement)) {
-          this.currentState.chess.undo();
-          this.currentState = {
-            position: new BoardPosition(returnPlacement, this.pendingSide.color),
-            chess: this.currentState.chess,
-            status: 'playing',
-            feedback: BoardFeedback.empty(),
-            returned: true,
-          };
-          this.onNewState?.(this.currentState);
-          return;
-        }
-      }
-
-      for (const move of this.turnSide!.validMoves) {
-        const position = BoardPosition.fromFen(move.after);
-        const feedback = position.buildFeedback(placement);
-        if (feedback.isEmpty()) {
-          this.currentState.chess.move(move);
-          console.log("Detected move:", move.san);
-          if (this.currentState.chess.isGameOver()) {
-            this.currentState = {
-              position,
-              status: 'over',
-              chess: this.currentState.chess,
-            };
-            this.releaseWakeLock();
-            this.onNewState?.(this.currentState);
-            return;
-          }
-
-          this.pendingSide = {
-            color: this.turnSide!.color,
-            returnPlacement: currentPosition.placement,
-            validMoves: this.turnSide!.validMoves,
-          }
-          this.turnSide = {
-            color: this.turnSide!.color === 'w' ? 'b' : 'w',
-            validMoves: this.currentState.chess.moves({ verbose: true }),
-          };
-          this.currentState = {
-            position,
-            chess: this.currentState.chess,
-            status: 'playing',
-            feedback,
-            returned: false,
-          };
-          this.onNewState?.(this.currentState);
-          return;
-        }
-      }
-
-      for (const move of (this.pendingSide?.validMoves ?? [])) {
-        const position = BoardPosition.fromFen(move.after);
-        const feedback = position.buildFeedback(placement);
-        if (feedback.isEmpty()) {
-          this.currentState.chess.undo();
-          this.currentState.chess.move(move);
-
-          if (this.currentState.chess.isGameOver()) {
-            this.currentState = {
-              position,
-              status: 'over',
-              chess: this.currentState.chess,
-            };
-            this.releaseWakeLock();
-            this.onNewState?.(this.currentState);
-            return;
-          }
-
-          this.turnSide = {
-            color: this.turnSide!.color,
-            validMoves: this.currentState.chess.moves({ verbose: true }),
-          };
-          this.currentState = {
-            position,
-            chess: this.currentState.chess,
-            status: 'playing',
-            feedback,
-            returned: false,
-          };
-          this.onNewState?.(this.currentState);
-          return;
-        }
-      }
-
-      this.currentState = {
-        position: currentPosition,
-        chess: this.currentState.chess,
-        status: 'playing',
-        feedback,
-        returned: false,
-      };
-      this.onNewState?.(this.currentState);
-      return;
-    }
-
-    const newState: GameState = {
-      placement,
-      status: 'random',
-    };
-    this.currentState = newState;
-    this.onNewState?.(newState);
+    this.handlePlacement(reportToPlacement(newData));
   }
 }

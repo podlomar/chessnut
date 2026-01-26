@@ -2,11 +2,11 @@ import { JSX, useEffect, useRef, useState } from 'react';
 import { Alert } from '../Alert';
 import { Button } from '../Button';
 import { ChessBoard } from '../ChessBoard';
-import { ChessnutDriver, GameState } from '../../chess-lib/chessnut';
+import { ChessnutDriver } from '../../chess-lib/chessnut';
 import { MovesHistory } from '../MovesHistory';
-import { BoardFeedback, emptyDiff, getDiffSize } from '../../chess-lib/placement';
+import { GameOverState, useChessGame } from '../../chess-lib/chess-game';
+import { AudioFeedback } from '../../lib/audio-feedback';
 import './styles.css';
-import { Chess } from 'chess.js';
 
 const cleanPgn = (pgn: string): string => {
   return pgn
@@ -15,63 +15,45 @@ const cleanPgn = (pgn: string): string => {
     .trim();                  // Trim leading/trailing whitespace
 };
 
-const errorSound = new Audio('/sounds/error.mp3');
-errorSound.load();
-
-const playDing = () => {
-  const dingSound = new Audio('/sounds/ding.mp3');
-  dingSound.play();
-}
-
-const playTap = () => {
-  const dingSound = new Audio('/sounds/tap.mp3');
-  dingSound.play();
-}
-
-const playGameOver = () => {
-  const gameOverSound = new Audio('/sounds/over.mp3');
-  gameOverSound.play();
-}
-
 interface Props {
   driver: ChessnutDriver;
 }
 
-const buildGameOverMessage = (chess: Chess): JSX.Element => {
-  if (chess.isCheckmate()) {
-    const winner = chess.turn() === 'w' ? 'Black' : 'White';
+const buildGameOverMessage = (gameOverState: GameOverState): JSX.Element => {
+  const { ending, position } = gameOverState;
+  const side = position.turnColor() === 'w' ? 'b' : 'w';
+
+  if (ending === 'checkmate') {
+    const winner = side === 'w' ? 'White' : 'Black';
     return <span>The game has ended in checkmate! <strong>{winner} wins</strong>.</span>;
-  } else if (chess.isStalemate()) {
+  } else if (ending === 'stalemate') {
     return <span>The game has ended in stalemate!</span>;
-  } else if (chess.isThreefoldRepetition()) {
+  } else if (ending === 'threefold_repetition') {
     return <span>The game has ended in a draw by threefold repetition.</span>;
-  } else if (chess.isInsufficientMaterial()) {
+  } else if (ending === 'insufficient_material') {
     return <span>The game has ended in a draw due to insufficient material.</span>;
-  } else if (chess.isDrawByFiftyMoves()) {
+  } else if (ending === '50move_rule') {
     return <span>The game has ended in a draw by the fifty-move rule.</span>;
-  } else if (chess.isDraw()) {
-    return <span>The game has ended in a draw.</span>;
   }
   return <span>The game has ended.</span>;
 }
 
 export const GamePage = ({ driver }: Props) => {
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, startGame] = useChessGame(driver);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    driver.onStateChange(setGameState);
     const handleSpaceKey = (event: KeyboardEvent) => {
       if (event.code === 'Space') {
         event.preventDefault();
-        driver.startGame();
+        startGame();
       }
     };
 
     const handleBackspaceKey = (event: KeyboardEvent) => {
       if (event.code === 'Backspace') {
         event.preventDefault();
-        driver.takeBack();
+        // driver.takeBack();
       }
     };
 
@@ -90,24 +72,19 @@ export const GamePage = ({ driver }: Props) => {
       window.removeEventListener('keydown', handleSpaceKey);
       window.removeEventListener('keydown', handleBackspaceKey);
       window.removeEventListener('keydown', handleCtrlD);
-      driver.offStateChange();
     };
   }, [driver]);
 
-  const handleStartGame = () => {
-    driver.startGame();
-  };
-
   const handleTakeBack = () => {
-    driver.takeBack();
+    // driver.takeBack();
   };
 
   const handleCopyPgn = async () => {
-    if (gameState === null || gameState.status === 'random') {
+    if (gameState.phase === 'setting-up') {
       return;
     }
 
-    const pgn = cleanPgn(gameState.chess.pgn());
+    const pgn = cleanPgn(gameState.position.pgn());
     try {
       await navigator.clipboard.writeText(pgn);
       setCopied(true);
@@ -117,64 +94,62 @@ export const GamePage = ({ driver }: Props) => {
     }
   };
 
-  const errorTimerRef = useRef<number | null>(null);
+  const { current: audioFeedback } = useRef(new AudioFeedback());
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
-    if (gameState === null) {
-      return;
-    }
-
-    if (gameState.status === 'random') {
-      window.clearInterval(errorTimerRef.current ?? undefined);
-      errorTimerRef.current = null;
-      return;
-    }
-
-    if (gameState.status === 'over') {
-      window.clearInterval(errorTimerRef.current ?? undefined);
-      errorTimerRef.current = null;
-      playGameOver();
-
-      const pgn = cleanPgn(gameState.chess.pgn());
-      console.log("Game Over! PGN:\n", pgn);
-      return;
-    }
-
-    if (gameState.status !== 'playing') {
-      window.clearInterval(errorTimerRef.current ?? undefined);
-      errorTimerRef.current = null;
-      return;
-    }
-
-    if (gameState.position.isInitial() && gameState.feedback.isEmpty()) {
-      window.clearInterval(errorTimerRef.current ?? undefined);
-      errorTimerRef.current = null;
-      playDing();
-      return;
-    }
-
-    if (gameState.returned) {
-      window.clearInterval(errorTimerRef.current ?? undefined);
-      errorTimerRef.current = null;
-      playDing();
-      return;
-    }
-
-    if (gameState.feedback.isEmpty()) {
-      window.clearInterval(errorTimerRef.current ?? undefined);
-      errorTimerRef.current = null;
-      playTap();
-      return;
-    }
-
-    if (gameState.feedback.hasErrors()) {
-      if (errorTimerRef.current === null) {
-        errorTimerRef.current = window.setInterval(() => {
-          errorSound.play();
-        }, 1500);
+    if (gameState.phase === 'setting-up') {
+      audioFeedback.reset();
+      if (wakeLockRef.current !== null) {
+        wakeLockRef.current.release();
+        wakeLockRef.current = null;
       }
+      return;
+    }
+
+    if (gameState.phase === 'game-over') {
+      audioFeedback.play('gameOver');
+      const pgn = cleanPgn(gameState.position.pgn());
+      console.log("Game Over! PGN:\n", pgn);
+      if (wakeLockRef.current !== null) {
+        wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      }
+      return;
+    }
+
+    if (wakeLockRef.current === null) {
+      navigator.wakeLock.request('screen')
+        .then((lock) => {
+          wakeLockRef.current = lock;
+          wakeLockRef.current.addEventListener('release', () => {
+            wakeLockRef.current = null;
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to acquire wake lock:", err);
+        });
+    }
+
+    if (gameState.position.status.type === 'ready') {
+      if (audioFeedback.errorAlertState !== 'scheduled') {
+        audioFeedback.play('ding');
+      }
+      audioFeedback.reset();
+      return;
+    }
+
+    if (gameState.position.status.type === 'moved') {
+      audioFeedback.play('tap');
+      return;
+    }
+
+    if (gameState.position.status.type === 'errors') {
+      audioFeedback.scheduleErrorFeedback();
     }
   }, [gameState]);
+
+  console.log("Game state phase:", gameState);
 
   return (
     <div className="container">
@@ -182,60 +157,52 @@ export const GamePage = ({ driver }: Props) => {
         <h1 className="app-title">Chessnut Play</h1>
         <div className="header-buttons">
           <Button primary
-            onClick={handleStartGame}
-            disabled={gameState === null || gameState.status === 'playing' || gameState.status === 'over' || gameState.placement.isInitial() === false}
+            onClick={startGame}
+            disabled={!gameState.canStartGame}
           >
             Start Game
           </Button>
           <Button
             onClick={handleTakeBack}
-            disabled={gameState === null || gameState.status === 'random' || gameState.chess.history().length === 0}
+            disabled={gameState.gameStarting}
           >
             Take Back
           </Button>
           <Button
             onClick={handleCopyPgn}
-            disabled={gameState === null || gameState.status === 'random' || gameState.chess.history().length === 0}
+            disabled={gameState.gameStarting}
           >
             {copied ? '✓ Copied!' : 'Copy PGN'}
           </Button>
         </div>
       </header>
 
-      {gameState?.status === 'over' && (
+      {gameState?.phase === 'game-over' && (
         <div className="alert-container">
           <Alert variant="info" title="Game Over">
-            <p>{buildGameOverMessage(gameState.chess)}</p>
+            <p>{buildGameOverMessage(gameState)}</p>
           </Alert>
         </div>
       )}
 
       <div className="game-container">
-        {gameState?.status === 'random' && (
+        {gameState.phase === 'setting-up' && (
           <ChessBoard
             placement={gameState.placement}
-            dimmed={gameState.placement.isInitial() === false}
-            feedback={BoardFeedback.empty()}
+            dimmed={gameState.placement.isStarting() === false}
           />
         )}
-        {gameState?.status === 'over' && (
+        {gameState.phase === 'in-progress' || gameState.phase === 'game-over' ? (
           <ChessBoard
             placement={gameState.position.placement}
             dimmed={false}
-            feedback={BoardFeedback.empty()}
+            status={gameState.position.status}
           />
-        )}
-        {gameState?.status === 'playing' && (
-          <ChessBoard
-            placement={gameState.position.placement}
-            dimmed={false}
-            feedback={gameState.feedback}
-          />
-        )}
+        ) : null}
         <MovesHistory
           history={
-            gameState?.status === 'playing' || gameState?.status === 'over'
-              ? gameState.chess.history({ verbose: true })
+            gameState.phase === 'in-progress' || gameState.phase === 'game-over'
+              ? gameState.position.movesHistory()
               : []
           }
         />

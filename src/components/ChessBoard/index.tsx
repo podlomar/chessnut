@@ -1,26 +1,32 @@
+import { JSX } from 'react';
 import clsx from 'clsx';
 import { Panel } from '../Panel';
 import { ChessPiece } from '../ChessPiece';
-import { BoardFeedback, Placement } from '../../chess-lib/placement';
+import { PiecesPlacement, Square, PositionStatus } from 'chessboard-sense';
 import './styles.css';
 
 interface Props {
-  placement: Placement;
-  dimmed: boolean;
-  feedback: BoardFeedback;
+  placement: PiecesPlacement;
+  dimmed?: boolean;
+  status?: PositionStatus;
 }
 
 export const ChessBoard = (
-  { placement, dimmed, feedback }: Props) => {
+  { placement, dimmed, status }: Props
+): JSX.Element => {
+  const accented = status?.type === 'errors';
   return (
-    <Panel className={clsx({ dimmed, accented: feedback.hasErrors() })} contentClassName="chessboard">
-      {placement.ranksMap((rank, rankIndex) => (
+    <Panel className={clsx({ dimmed, accented })} contentClassName="chessboard">
+      {placement.ranks().map((rank, rankIndex) => (
         <div className="row" key={rankIndex}>
           {rank.map((piece, fileIndex) => {
-            const feedbackSquare = feedback.squares[rankIndex][fileIndex];
+            const square = Square.fromCoords(7 - rankIndex, fileIndex);
+            const isLifted = status?.type === 'lifted' && status.square === square;
+            const feedbackSquare = status?.type === 'errors' ? status.targets.find(error => error.square === square) : undefined;
+
             const className = clsx('cell', {
-              'cell--lifted': feedbackSquare?.type === 'lifted',
-              'cell--error': feedbackSquare?.type === 'error',
+              'cell--lifted': isLifted,
+              'cell--error': feedbackSquare !== undefined,
             });
 
             const targetPiece = (feedbackSquare?.piece ?? null) ?? piece;
@@ -28,7 +34,7 @@ export const ChessBoard = (
               <div className={className} key={fileIndex}>
                 {targetPiece === null
                   ? null
-                  : <ChessPiece type={targetPiece.type} color={targetPiece.color} />}
+                  : <ChessPiece piece={targetPiece} />}
               </div>
             );
           })}

@@ -1,13 +1,12 @@
-import { PieceSymbol, Color } from "chess.js";
 import './styles.css';
+import { Piece } from "chessboard-sense";
 
 interface Props {
-  type: PieceSymbol;
-  color: Color;
+  piece: Piece;
 }
 
-export const ChessPiece = ({ type, color }: Props) => {
+export const ChessPiece = ({ piece }: Props) => {
   return (
-    <div className={`piece ${color}${type}`} />
+    <div className={`piece ${piece.side()}${piece.symbol.toLowerCase()}`} />
   );
 };

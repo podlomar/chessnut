@@ -1,22 +1,13 @@
-import { Panel } from "../Panel";
-import { Move } from "chess.js";
-import './styles.css';
 import { useEffect, useRef } from "react";
+import { Panel } from "../Panel";
+import { type Turn } from "chessboard-sense";
+import './styles.css';
 
 interface Props {
-  history: Move[];
+  history: Turn[];
 }
 
 export const MovesHistory = ({ history }: Props) => {
-  const movePairs: { white: Move; black?: Move }[] = [];
-
-  for (let i = 0; i < history.length; i += 2) {
-    movePairs.push({
-      white: history[i],
-      black: history[i + 1],
-    });
-  }
-
   const listRef = useRef<HTMLUListElement | null>(null);
 
   useEffect(() => {
@@ -37,15 +28,15 @@ export const MovesHistory = ({ history }: Props) => {
         <p className="moves-history__empty">No moves yet. Start playing!</p>
       ) : (
         <ul ref={listRef} className="moves-history__list">
-          {movePairs.map((pair, index) => (
+          {history.map((turn, index) => (
             <li key={index} className="moves-history__row">
               <span className="moves-history__number">{index + 1}.</span>
               <span className="moves-history__move">
-                {pair.white.san}
+                {turn.white}
               </span>
-              {pair.black && (
+              {turn.black && (
                 <span className="moves-history__move">
-                  {pair.black.san}
+                  {turn.black}
                 </span>
               )}
             </li>

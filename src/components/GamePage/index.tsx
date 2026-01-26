@@ -64,14 +64,27 @@ export const GamePage = ({ driver }: Props) => {
       }
     };
 
+    const handleFullscreen = (event: KeyboardEvent) => {
+      if (event.code === 'KeyF') {
+        event.preventDefault();
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          document.documentElement.requestFullscreen();
+        }
+      }
+    };
+
     window.addEventListener('keydown', handleCtrlD);
     window.addEventListener('keydown', handleSpaceKey);
     window.addEventListener('keydown', handleBackspaceKey);
+    window.addEventListener('keydown', handleFullscreen);
 
     return () => {
       window.removeEventListener('keydown', handleSpaceKey);
       window.removeEventListener('keydown', handleBackspaceKey);
       window.removeEventListener('keydown', handleCtrlD);
+      window.removeEventListener('keydown', handleFullscreen);
     };
   }, [driver]);
 
